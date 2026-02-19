@@ -111,7 +111,7 @@ class HelpPlugin(Plugin):
                 other_cmds.append(cmd_name)
         
         help_text = "╔══════════════════════════════════════════════════════════════╗\n"
-        help_text += "║                    PLUGIN COMMANDS HELP                        ║\n"
+        help_text += "║                    PLUGIN COMMANDS HELP                      ║\n"
         help_text += "╠══════════════════════════════════════════════════════════════╣\n"
         help_text += "║  Use / before any command. Example: /help                    ║\n"
         help_text += "║  Use /help <command> for details on a specific command.      ║\n"
