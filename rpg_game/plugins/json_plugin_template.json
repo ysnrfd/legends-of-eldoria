@@ -1,0 +1,216 @@
+{
+    "info": {
+        "id": "json_plugin_template",
+        "name": "JSON Plugin Template",
+        "version": "2.0.0",
+        "author": "Plugin Developer",
+        "description": "A template for JSON-based data-only plugins demonstrating the dynamic plugin system.",
+        
+        "dependencies": [],
+        "soft_dependencies": ["extended_items"],
+        "conflicts": [],
+        "provides": ["json_template_content"],
+        
+        "priority": 100,
+        "plugin_type": "data",
+        
+        "min_game_version": "1.0.0",
+        "api_version": "2.0",
+        
+        "configurable": false,
+        "supports_hot_reload": true,
+        
+        "tags": ["template", "data", "example"],
+        "license": "MIT",
+        "custom": {
+            "category": "development",
+            "content_counts": {
+                "items": 3,
+                "enemies": 1,
+                "locations": 1,
+                "npcs": 1,
+                "quests": 1,
+                "recipes": 1
+            }
+        }
+    },
+    
+    "items": {
+        "_comment": "Items added by this plugin",
+        
+        "json_sword": {
+            "name": "JSON Blade",
+            "item_type": "weapon",
+            "rarity": "Rare",
+            "value": 500,
+            "weight": 3.0,
+            "description": "A sword defined entirely in JSON format.",
+            "damage_min": 10,
+            "damage_max": 20,
+            "damage_type": "physical",
+            "attack_speed": 1.0,
+            "critical_chance": 0.1,
+            "level_required": 5
+        },
+        
+        "json_potion": {
+            "name": "JSON Potion",
+            "item_type": "consumable",
+            "rarity": "Common",
+            "value": 50,
+            "weight": 0.2,
+            "description": "A healing potion defined in JSON.",
+            "hp_restore": 50,
+            "mp_restore": 25,
+            "use_message": "You drink the JSON potion."
+        },
+        
+        "json_ring": {
+            "name": "JSON Ring",
+            "item_type": "accessory",
+            "rarity": "Uncommon",
+            "value": 200,
+            "weight": 0.1,
+            "description": "A ring defined in JSON format.",
+            "stat_bonuses": {
+                "luck": 2,
+                "charisma": 1
+            },
+            "level_required": 3
+        }
+    },
+    
+    "enemies": {
+        "_comment": "Enemies added by this plugin",
+        
+        "json_golem": {
+            "name": "JSON Golem",
+            "description": "A construct made of pure data.",
+            "base_hp": 100,
+            "base_mp": 0,
+            "base_damage": 15,
+            "rarity": "Uncommon",
+            "faction": "construct",
+            "resistances": {
+                "physical": 0.3
+            },
+            "drops": {
+                "gold": [20, 50],
+                "items": ["json_ring"]
+            }
+        }
+    },
+    
+    "locations": {
+        "_comment": "Locations added by this plugin",
+        
+        "json_tower": {
+            "name": "JSON Tower",
+            "description": "A mysterious tower that exists in the data layer.",
+            "location_type": "dungeon",
+            "level_range": [5, 15],
+            "connections": ["capital_city"],
+            "enemies": ["json_golem"],
+            "danger_level": 3,
+            "special_features": {
+                "json_magic": true
+            },
+            "discovery_exp": 200
+        }
+    },
+    
+    "npcs": {
+        "_comment": "NPCs added by this plugin",
+        
+        "json_merchant": {
+            "name": "JSON Merchant",
+            "description": "A merchant who trades in JSON goods.",
+            "npc_type": "merchant",
+            "location": "json_tower",
+            "shop_items": ["json_sword", "json_potion", "json_ring"],
+            "buy_multiplier": 1.0,
+            "sell_multiplier": 0.5,
+            "dialogue": {
+                "greeting": {
+                    "low_friendship": "\"Welcome! I deal in JSON wares.\"",
+                    "medium_friendship": "\"Good to see you again!\"",
+                    "high_friendship": "\"My best customer!\""
+                }
+            }
+        }
+    },
+    
+    "quests": {
+        "_comment": "Quests added by this plugin",
+        
+        "json_quest": {
+            "name": "The JSON Mystery",
+            "description": "Investigate the mysterious JSON Tower.",
+            "quest_type": "side",
+            "giver": "json_merchant",
+            "location": "json_tower",
+            "level_required": 5,
+            "objectives": [
+                {
+                    "type": "reach",
+                    "target": "json_tower",
+                    "required": 1,
+                    "description": "Find the JSON Tower"
+                },
+                {
+                    "type": "kill",
+                    "target": "json_golem",
+                    "required": 3,
+                    "description": "Defeat JSON Golems"
+                }
+            ],
+            "rewards": {
+                "experience": 500,
+                "gold": 250,
+                "items": ["json_ring"]
+            }
+        }
+    },
+    
+    "recipes": {
+        "_comment": "Crafting recipes added by this plugin",
+        
+        "json_sword_recipe": {
+            "name": "JSON Sword Recipe",
+            "category": "weapons",
+            "result": "json_sword",
+            "result_quantity": 1,
+            "ingredients": {
+                "iron_ingot": 2,
+                "magic_crystal": 1
+            },
+            "skill_required": "Crafting",
+            "skill_level": 5,
+            "time": 2,
+            "gold_cost": 100,
+            "experience": 25
+        }
+    },
+    
+    "_documentation": {
+        "purpose": "JSON plugins allow adding content without Python code",
+        "usage": [
+            "1. Create a .json file in the plugins directory",
+            "2. Define your content in the appropriate sections",
+            "3. The plugin system will automatically load it"
+        ],
+        "sections": {
+            "info": "Plugin metadata (required)",
+            "items": "Weapons, armor, consumables, accessories, materials",
+            "enemies": "Enemy definitions with stats and drops",
+            "locations": "World locations with connections and features",
+            "npcs": "Non-player characters with dialogue and services",
+            "quests": "Quest definitions with objectives and rewards",
+            "recipes": "Crafting recipes"
+        },
+        "rarity_values": ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"],
+        "damage_types": ["physical", "fire", "ice", "lightning", "holy", "dark", "poison"],
+        "location_types": ["town", "city", "village", "dungeon", "forest", "mountain", "desert", "swamp", "cave", "ruins", "castle", "temple", "special"],
+        "npc_types": ["merchant", "trainer", "quest_giver", "blacksmith", "healer", "innkeeper", "mysterious"]
+    }
+}
