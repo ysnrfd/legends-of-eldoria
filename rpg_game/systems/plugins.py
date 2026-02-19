@@ -368,6 +368,10 @@ class PluginManager:
             except Exception as e:
                 logger.error(f"Error in event handler for {event_type}: {e}")
     
+    def emit(self, event_type: EventType, data: Dict):
+        """Alias for emit_event - provides compatibility with event system interface"""
+        self.emit_event(event_type, data)
+    
     def execute_command(self, command: str, *args, **kwargs) -> Tuple[bool, Any]:
         """Execute a registered command"""
         if command not in self._commands:
