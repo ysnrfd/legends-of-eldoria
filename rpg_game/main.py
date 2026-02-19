@@ -1082,7 +1082,7 @@ class Game:
         cmd_name = parts[0] if parts else ""
         args = parts[1:] if len(parts) > 1 else []
         
-        success, result = self.plugin_manager.command_system.execute(cmd_name, self, args)
+        success, result = self.plugin_manager.execute_command(cmd_name, self, args)
         print(f"\n{result}")
         pause()
 
