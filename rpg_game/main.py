@@ -195,7 +195,7 @@ class Game:
         pause()
         
         # Emit game start event
-        self.plugin_manager.event_system.emit(EventType.GAME_START, {"player": self.player})
+        self.plugin_manager.emit_event(EventType.GAME_START, {"player": self.player})
         
         # Enter game loop
         self.game_loop()
@@ -268,7 +268,7 @@ class Game:
                 pause()
                 
                 # Emit load event
-                self.plugin_manager.event_system.emit(EventType.GAME_LOAD, {"player": self.player})
+                self.plugin_manager.emit_event(EventType.GAME_LOAD, {"player": self.player})
                 
                 # Enter game loop
                 self.game_loop()
@@ -299,7 +299,7 @@ class Game:
         success, message = self.save_manager.save_game(game_state, save_name)
         
         if success:
-            self.plugin_manager.event_system.emit(EventType.GAME_SAVE, {"player": self.player})
+            self.plugin_manager.emit_event(EventType.GAME_SAVE, {"player": self.player})
         
         return success, message
     
@@ -479,7 +479,7 @@ class Game:
     
     def start_combat(self, enemies):
         """Start combat encounter"""
-        combat = CombatEncounter(self.player, enemies, self.plugin_manager.event_system)
+        combat = CombatEncounter(self.player, enemies, self.plugin_manager)
         result = combat.start()
         
         if result.victory:
@@ -559,9 +559,9 @@ class Game:
                 print(f"\n{msg}")
                 
                 if success:
-                    self.plugin_manager.event_system.emit(EventType.LOCATION_ENTER, {
-                        "player": self.player,
-                        "location": dest_id
+                    self.plugin_manager.emit_event(EventType.LOCATION_ENTER, {
+                        "location": location,
+                        "player": self.player
                     })
                 
                 pause()

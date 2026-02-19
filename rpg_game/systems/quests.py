@@ -372,6 +372,23 @@ class QuestManager:
                     available.append(quest)
         return available
     
+    def update_quest_availability(self, completed_quests: Set[str], player_level: int):
+        """Update quest availability based on player progress and level"""
+        for quest in self.quests.values():
+            # Skip if already completed or in progress
+            if quest.status in (QuestStatus.COMPLETED, QuestStatus.IN_PROGRESS):
+                continue
+            
+            # Check if all prerequisites are met
+            prerequisites_met = all(prereq in completed_quests for prereq in quest.prerequisites)
+            
+            # Check if level requirement is met
+            level_met = player_level >= quest.level_required
+            
+            # Update status to available if both conditions are met
+            if prerequisites_met and level_met:
+                quest.status = QuestStatus.AVAILABLE
+    
     def get_completed_quests(self) -> List[Quest]:
         """Get all completed quests"""
         return [self.quests[qid] for qid in self.completed_quests if qid in self.quests]
