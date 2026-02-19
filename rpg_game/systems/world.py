@@ -128,16 +128,28 @@ class Location:
 
 @dataclass
 class WorldEvent:
-    """Random world events"""
+    """A world event that can occur"""
     id: str
     name: str
     description: str
     event_type: str
     choices: List[Dict[str, Any]] = field(default_factory=list)
     rewards: Dict[str, Any] = field(default_factory=dict)
-    requirements: Dict[str, Any] = field(default_factory=dict)
     one_time: bool = False
     triggered: bool = False
+    condition: Optional[Callable] = None
+    
+    def to_dict(self) -> Dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "event_type": self.event_type,
+            "choices": self.choices,
+            "rewards": self.rewards,
+            "one_time": self.one_time,
+            "triggered": self.triggered
+        }
 
 
 class WorldMap:
@@ -145,374 +157,298 @@ class WorldMap:
     
     def __init__(self):
         self.locations: Dict[str, Location] = {}
-        self.current_location: Optional[str] = None
+        self.current_location: str = "start_village"
         self.time_of_day: TimeOfDay = TimeOfDay.MORNING
         self.weather: Weather = Weather.CLEAR
         self.day: int = 1
         self.hour: int = 8
-        self.events: Dict[str, WorldEvent] = {}
         self.discovered_locations: Set[str] = set()
+        self.events: Dict[str, WorldEvent] = {}
         
         self._init_world()
     
     def _init_world(self):
-        """Initialize the game world with locations"""
-        # Create locations
-        locations_data = [
-            {
-                "id": "start_village",
-                "name": "Willowbrook Village",
-                "description": "A peaceful farming village nestled in a green valley. "
-                             "Simple cottages line dirt roads, and farmers tend to their fields. "
-                             "The village square features a ancient oak tree where villagers gather.",
-                "location_type": LocationType.VILLAGE,
-                "level_range": (1, 3),
-                "connections": ["forest_path", "main_road"],
-                "npcs": ["elder_thorne", "blacksmith_gareth", "healer_rose", "merchant_finn"],
-                "shops": ["village_shop", "blacksmith"],
-                "danger_level": 0
-            },
-            {
-                "id": "forest_path",
-                "name": "Whispering Woods Path",
-                "description": "A winding path through an ancient forest. Tall trees tower overhead, "
-                             "their branches forming a canopy that filters the sunlight. "
-                             "Strange sounds echo from the deeper woods.",
-                "location_type": LocationType.FOREST,
-                "level_range": (1, 5),
-                "connections": ["start_village", "deep_forest", "ranger_outpost"],
-                "enemies": ["wolf", "goblin", "boar"],
-                "items": ["herb", "mushroom", "branch"],
-                "danger_level": 2
-            },
-            {
-                "id": "deep_forest",
-                "name": "Deep Whispering Woods",
-                "description": "The heart of the ancient forest. Here, the trees are oldest and tallest, "
-                             "and the shadows are deepest. Ancient magic permeates the air. "
-                             "Legends speak of a forgotten temple hidden somewhere within.",
-                "location_type": LocationType.FOREST,
-                "level_range": (5, 10),
-                "connections": ["forest_path", "ancient_temple", "fairy_grove"],
-                "enemies": ["wolf", "bear", "treant", "fairy"],
-                "danger_level": 4
-            },
-            {
-                "id": "main_road",
-                "name": "King's Highway",
-                "description": "A well-maintained road connecting the major settlements of the realm. "
-                             "Merchants, travelers, and soldiers frequent this route. "
-                             "Waystations offer rest for weary travelers.",
-                "location_type": LocationType.WILDERNESS,
-                "level_range": (1, 8),
-                "connections": ["start_village", "capital_city", "mining_town", "crossroads"],
-                "enemies": ["bandit", "wolf"],
-                "danger_level": 1
-            },
-            {
-                "id": "capital_city",
-                "name": "Aurelia, Capital of the Realm",
-                "description": "The magnificent capital city rises from the plains, its white walls "
-                             "gleaming in the sun. The royal castle dominates the skyline, while "
-                             "bustling markets, grand temples, and noble estates fill the city.",
-                "location_type": LocationType.CITY,
-                "level_range": (1, 20),
-                "connections": ["main_road", "royal_castle", "sewers"],
-                "npcs": ["king_aldric", "archmage_silas", "guild_master", "innkeeper_mara"],
-                "shops": ["grand_market", "armory", "magic_shop", "alchemy_shop"],
-                "danger_level": 0
-            },
-            {
-                "id": "royal_castle",
-                "name": "Castle Aurelius",
-                "description": "The seat of royal power, this ancient castle has stood for centuries. "
-                             "Its halls contain both great treasures and dark secrets. "
-                             "The throne room awaits those with business for the king.",
-                "location_type": LocationType.CASTLE,
-                "level_range": (10, 20),
-                "connections": ["capital_city", "royal_dungeons"],
-                "npcs": ["king_aldric", "royal_guard_captain"],
-                "danger_level": 0,
-                "special_features": {"throne_room": True, "treasury": True}
-            },
-            {
-                "id": "ancient_temple",
-                "name": "Temple of the Forgotten God",
-                "description": "An ancient temple dedicated to a god whose name has been lost to time. "
-                             "Crumbled pillars and faded murals hint at forgotten glories. "
-                             "A dark presence lurks in the inner sanctum.",
-                "location_type": LocationType.TEMPLE,
-                "level_range": (10, 15),
-                "connections": ["deep_forest"],
-                "enemies": ["skeleton", "ghost", "cultist", "temple_guardian"],
-                "danger_level": 5,
-                "special_features": {"boss": "forgotten_priest", "treasure": True}
-            },
-            {
-                "id": "mining_town",
-                "name": "Irondeep Mining Town",
-                "description": "A rugged town built around the entrance to vast mines. "
-                             "Miners, smiths, and merchants fill the streets. "
-                             "The constant ringing of pickaxes echoes from the mountains.",
-                "location_type": LocationType.TOWN,
-                "level_range": (5, 12),
-                "connections": ["main_road", "mountain_pass", "deep_mines"],
-                "npcs": ["mine_foreman", "dwarf_smith", "prospector"],
-                "shops": ["mine_shop", "dwarf_smithy"],
-                "danger_level": 1
-            },
-            {
-                "id": "mountain_pass",
-                "name": "Highrock Pass",
-                "description": "A treacherous mountain pass winds between snow-capped peaks. "
-                             "The air is thin and cold. Ancient watchtowers stand guard "
-                             "against threats from beyond the mountains.",
-                "location_type": LocationType.MOUNTAIN,
-                "level_range": (8, 15),
-                "connections": ["mining_town", "northern_realm", "dragon_peak"],
-                "enemies": ["mountain_troll", "harpy", "ice_elemental"],
-                "danger_level": 4
-            },
-            {
-                "id": "dragon_peak",
-                "name": "Dragon's Peak",
-                "description": "The highest mountain in the realm, legendary as the lair of dragons. "
-                             "Scorched earth and ancient bones litter the slopes. "
-                             "Those who dare enter face certain death - or legendary treasure.",
-                "location_type": LocationType.MOUNTAIN,
-                "level_range": (20, 30),
-                "connections": ["mountain_pass"],
-                "enemies": ["dragon_wyrmling", "dragon"],
-                "danger_level": 5,
-                "special_features": {"boss": "ancient_dragon", "legendary_treasure": True}
-            },
-            {
-                "id": "swamp_lands",
-                "name": "Murkmire Swamp",
-                "description": "A vast, misty swamp where the ground is never solid. "
-                             "Twisted trees rise from murky waters, and strange lights "
-                             "dance in the darkness. Many have entered, few have returned.",
-                "location_type": LocationType.SWAMP,
-                "level_range": (5, 12),
-                "connections": ["crossroads", "witch_hut"],
-                "enemies": ["swamp_creature", "witch", "crocodile", "will_o_wisp"],
-                "danger_level": 3
-            },
-            {
-                "id": "crossroads",
-                "name": "Four Ways Crossroads",
-                "description": "Where four major roads meet, a small settlement has grown. "
-                             "An ancient inn offers shelter, and a mysterious statue stands "
-                             "at the center, said to grant boons to the worthy.",
-                "location_type": LocationType.WILDERNESS,
-                "level_range": (1, 10),
-                "connections": ["main_road", "swamp_lands", "desert_border", "ruined_kingdom"],
-                "npcs": ["innkeeper", "wandering_merchant", "mysterious_stranger"],
-                "shops": ["crossroads_inn"],
-                "danger_level": 1
-            },
-            {
-                "id": "desert_border",
-                "name": "Scorchfire Desert Edge",
-                "description": "Where the fertile lands meet the endless desert. "
-                             "Sand dunes stretch to the horizon under a blazing sun. "
-                             "Ancient ruins are sometimes uncovered by the shifting sands.",
-                "location_type": LocationType.DESERT,
-                "level_range": (10, 18),
-                "connections": ["crossroads", "desert_oasis", "sand_temple"],
-                "enemies": ["scorpion", "sand_worm", "desert_raider"],
-                "danger_level": 3
-            },
-            {
-                "id": "dungeon_depths",
-                "name": "The Endless Dungeon",
-                "description": "An ancient dungeon of unknown origin, said to descend infinitely. "
-                             "Each floor holds greater challenges and greater treasures. "
-                             "Only the bravest adventurers dare to plumb its depths.",
-                "location_type": LocationType.DUNGEON,
-                "level_range": (1, 50),
-                "connections": ["capital_city"],
-                "enemies": ["skeleton", "goblin", "orc", "troll", "demon", "boss_monster"],
-                "danger_level": 5,
-                "special_features": {"infinite_dungeon": True, "floor": 1}
-            },
-            {
-                "id": "fairy_grove",
-                "name": "Enchanted Fairy Grove",
-                "description": "A hidden glen where fairies dance under eternal moonlight. "
-                             "Beautiful flowers bloom everywhere, and the air shimmers with magic. "
-                             "The fairies may grant wishes - for a price.",
-                "location_type": LocationType.SPECIAL,
-                "level_range": (1, 10),
-                "connections": ["deep_forest"],
-                "npcs": ["fairy_queen"],
-                "danger_level": 0,
-                "special_features": {"wishing_well": True, "fairy_blessing": True}
-            },
-            {
-                "id": "ruined_kingdom",
-                "name": "Ruins of Valdris",
-                "description": "The remains of an ancient kingdom destroyed in a great cataclysm. "
-                             "Crumbling towers and shattered palaces speak of former glory. "
-                             "Undead horrors now stalk these haunted ruins.",
-                "location_type": LocationType.RUINS,
-                "level_range": (15, 25),
-                "connections": ["crossroads"],
-                "enemies": ["skeleton", "ghost", "wraith", "lich"],
-                "danger_level": 5,
-                "special_features": {"boss": "ancient_lich", "legendary_treasure": True}
-            }
-        ]
-        
-        for loc_data in locations_data:
-            location = Location(
-                id=loc_data["id"],
-                name=loc_data["name"],
-                description=loc_data["description"],
-                location_type=loc_data["location_type"],
-                level_range=loc_data["level_range"],
-                connections=loc_data.get("connections", []),
-                npcs=loc_data.get("npcs", []),
-                shops=loc_data.get("shops", []),
-                enemies=loc_data.get("enemies", []),
-                items=loc_data.get("items", []),
-                events=loc_data.get("events", []),
-                danger_level=loc_data.get("danger_level", 1),
-                special_features=loc_data.get("special_features", {})
+        """Initialize default world locations"""
+        default_locations = {
+            "start_village": Location(
+                id="start_village",
+                name="Willowbrook Village",
+                description="A peaceful village surrounded by willow trees. The air smells of fresh bread and woodsmoke.",
+                location_type=LocationType.VILLAGE,
+                level_range=(1, 3),
+                connections=["forest_edge", "trade_road"],
+                npcs=["village_elder", "village_merchant", "village_guard"],
+                danger_level=0
+            ),
+            "forest_edge": Location(
+                id="forest_edge",
+                name="Whispering Woods",
+                description="Ancient trees whisper secrets to those who listen. The forest is dark and foreboding.",
+                location_type=LocationType.FOREST,
+                level_range=(1, 5),
+                connections=["start_village", "deep_forest", "ruins"],
+                enemies=["goblin", "wolf"],
+                danger_level=2
+            ),
+            "deep_forest": Location(
+                id="deep_forest",
+                name="Deep Forest",
+                description="The trees grow thicker here, blocking out most sunlight. Strange sounds echo from the shadows.",
+                location_type=LocationType.FOREST,
+                level_range=(3, 8),
+                connections=["forest_edge", "cave_entrance"],
+                enemies=["goblin", "wolf", "orc_warrior"],
+                danger_level=3
+            ),
+            "cave_entrance": Location(
+                id="cave_entrance",
+                name="Dark Cave",
+                description="A gaping maw in the earth leads into darkness. The air smells of damp stone and something... else.",
+                location_type=LocationType.CAVE,
+                level_range=(5, 10),
+                connections=["deep_forest", "underground_ruins"],
+                enemies=["skeleton", "dark_mage"],
+                danger_level=4
+            ),
+            "ruins": Location(
+                id="ruins",
+                name="Ancient Ruins",
+                description="Crumbling stone structures hint at a once-great civilization. Now only monsters dwell here.",
+                location_type=LocationType.RUINS,
+                level_range=(5, 12),
+                connections=["forest_edge", "temple"],
+                enemies=["skeleton", "dark_mage", "troll"],
+                danger_level=4
+            ),
+            "temple": Location(
+                id="temple",
+                name="Forgotten Temple",
+                description="An ancient temple to forgotten gods. Dark energy pulses from within.",
+                location_type=LocationType.TEMPLE,
+                level_range=(10, 20),
+                connections=["ruins"],
+                enemies=["dark_mage", "vampire"],
+                danger_level=5
+            ),
+            "trade_road": Location(
+                id="trade_road",
+                name="Merchant's Road",
+                description="A well-traveled road connecting villages and towns. Bandits sometimes lurk here.",
+                location_type=LocationType.WILDERNESS,
+                level_range=(2, 6),
+                connections=["start_village", "capital_city"],
+                enemies=["wolf"],
+                danger_level=1
+            ),
+            "capital_city": Location(
+                id="capital_city",
+                name="Aldor Capital",
+                description="The grand capital city of the realm. Towers of white stone reach for the sky.",
+                location_type=LocationType.CITY,
+                level_range=(5, 20),
+                connections=["trade_road", "mountain_pass"],
+                npcs=["king", "royal_merchant", "guild_master"],
+                shops=["royal_armory", "magic_emporium", "general_store"],
+                danger_level=0
+            ),
+            "mountain_pass": Location(
+                id="mountain_pass",
+                name="Dragon's Pass",
+                description="A treacherous mountain path. Legends say dragons nest in the peaks above.",
+                location_type=LocationType.MOUNTAIN,
+                level_range=(15, 30),
+                connections=["capital_city", "dragon_peak"],
+                enemies=["troll", "dragon_wyrmling"],
+                danger_level=5
+            ),
+            "dragon_peak": Location(
+                id="dragon_peak",
+                name="Dragon's Peak",
+                description="The highest peak in the realm. An ancient dragon is said to dwell in a cave here.",
+                location_type=LocationType.MOUNTAIN,
+                level_range=(25, 50),
+                connections=["mountain_pass"],
+                enemies=["dragon_wyrmling", "ancient_dragon"],
+                danger_level=5
+            ),
+            "underground_ruins": Location(
+                id="underground_ruins",
+                name="Deep Ruins",
+                description="Ancient catacombs beneath the earth. Undead horrors stalk these halls.",
+                location_type=LocationType.RUINS,
+                level_range=(10, 25),
+                connections=["cave_entrance"],
+                enemies=["skeleton", "vampire", "demon"],
+                danger_level=5
             )
-            self.locations[location.id] = location
+        }
         
-        # Set starting location
-        self.current_location = "start_village"
-        self.locations["start_village"].discovered = True
+        for loc_id, location in default_locations.items():
+            self.locations[loc_id] = location
+        
+        # Mark starting location as discovered
         self.discovered_locations.add("start_village")
+        self.locations["start_village"].discovered = True
         
-        # Initialize world events
+        # Initialize events
         self._init_events()
     
     def _init_events(self):
-        """Initialize random world events"""
-        events_data = [
-            {
-                "id": "merchant_caravan",
-                "name": "Merchant Caravan",
-                "description": "A merchant caravan has stopped nearby. They offer rare goods at special prices.",
-                "event_type": "shop",
-                "choices": [
-                    {"text": "Trade with the merchants", "effect": "open_shop"},
-                    {"text": "Rob the caravan", "effect": "combat", "enemies": ["bandit", "bandit", "merchant_guard"]},
-                    {"text": "Leave", "effect": "nothing"}
+        """Initialize world events"""
+        self.events = {
+            "abandoned_chest": WorldEvent(
+                id="abandoned_chest",
+                name="Abandoned Chest",
+                description="You discover an old chest half-buried in the dirt. It might contain valuables... or danger.",
+                event_type="treasure",
+                choices=[
+                    {"text": "Open it carefully", "effect": "treasure"},
+                    {"text": "Leave it alone", "effect": "nothing"},
+                    {"text": "Smash it open", "effect": "trap"}
+                ],
+                rewards={"gold": (10, 50), "item_chance": 0.3}
+            ),
+            "wandering_merchant": WorldEvent(
+                id="wandering_merchant",
+                name="Wandering Merchant",
+                description="A traveling merchant has set up a temporary camp. He offers rare goods at inflated prices.",
+                event_type="shop",
+                choices=[
+                    {"text": "Browse his wares", "effect": "open_shop"},
+                    {"text": "Decline and move on", "effect": "nothing"}
                 ]
-            },
-            {
-                "id": "treasure_chest",
-                "name": "Mysterious Chest",
-                "description": "You discover an ornate chest partially buried. It might be trapped.",
-                "event_type": "treasure",
-                "choices": [
-                    {"text": "Open it carefully", "effect": "treasure", "trap_chance": 0.3},
-                    {"text": "Smash it open", "effect": "treasure", "trap_chance": 0.6},
-                    {"text": "Leave it", "effect": "nothing"}
+            ),
+            "injured_traveler": WorldEvent(
+                id="injured_traveler",
+                name="Injured Traveler",
+                description="You find a wounded traveler by the roadside. They beg for help.",
+                event_type="choice",
+                choices=[
+                    {"text": "Heal them", "effect": "heal"},
+                    {"text": "Rob them", "effect": "evil"},
+                    {"text": "Move on", "effect": "nothing"}
                 ],
-                "rewards": {"gold": (50, 200), "item_chance": 0.5}
-            },
-            {
-                "id": "wounded_traveler",
-                "name": "Wounded Traveler",
-                "description": "A wounded traveler lies by the path. They seem to be in distress.",
-                "event_type": "social",
-                "choices": [
-                    {"text": "Help them", "effect": "heal", "karma": 5},
-                    {"text": "Rob them", "effect": "steal", "karma": -10},
-                    {"text": "Leave them", "effect": "nothing"}
-                ],
-                "rewards": {"gold": 20, "reputation": 5}
-            },
-            {
-                "id": "fairy_circle",
-                "name": "Fairy Circle",
-                "description": "A perfect ring of mushrooms glows with an otherworldly light.",
-                "event_type": "magic",
-                "choices": [
-                    {"text": "Step inside", "effect": "teleport"},
-                    {"text": "Make a wish", "effect": "wish"},
-                    {"text": "Leave", "effect": "nothing"}
-                ],
-                "one_time": True
-            },
-            {
-                "id": "ancient_shrine",
-                "name": "Ancient Shrine",
-                "description": "An ancient shrine to a forgotten deity. The stone altar still emanates power.",
-                "event_type": "blessing",
-                "choices": [
+                rewards={"friendship": 10, "experience": 50}
+            ),
+            "mysterious_shrine": WorldEvent(
+                id="mysterious_shrine",
+                name="Mysterious Shrine",
+                description="An ancient shrine stands before you, pulsing with magical energy.",
+                event_type="choice",
+                choices=[
                     {"text": "Pray at the shrine", "effect": "blessing"},
-                    {"text": "Desecrate it", "effect": "curse"},
-                    {"text": "Take the offerings", "effect": "gold", "karma": -5}
-                ]
-            },
-            {
-                "id": "mysterious_portal",
-                "name": "Mysterious Portal",
-                "description": "A swirling portal of energy hovers in the air. Who knows where it leads?",
-                "event_type": "special",
-                "choices": [
-                    {"text": "Enter the portal", "effect": "portal"},
-                    {"text": "Dispel it", "effect": "dispel"},
-                    {"text": "Leave", "effect": "nothing"}
+                    {"text": "Study the magic", "effect": "knowledge"},
+                    {"text": "Destroy it", "effect": "curse"}
                 ],
-                "requirements": {"level": 10}
-            }
-        ]
-        
-        for event_data in events_data:
-            event = WorldEvent(
-                id=event_data["id"],
-                name=event_data["name"],
-                description=event_data["description"],
-                event_type=event_data["event_type"],
-                choices=event_data.get("choices", []),
-                rewards=event_data.get("rewards", {}),
-                requirements=event_data.get("requirements", {}),
-                one_time=event_data.get("one_time", False)
+                one_time=True
+            ),
+            "portal": WorldEvent(
+                id="portal",
+                name="Unstable Portal",
+                description="A shimmering portal hovers in the air. Its destination is unknown.",
+                event_type="choice",
+                choices=[
+                    {"text": "Step through", "effect": "portal"},
+                    {"text": "Leave it alone", "effect": "nothing"}
+                ],
+                one_time=True
+            ),
+            "ambush": WorldEvent(
+                id="ambush",
+                name="Ambush!",
+                description="Enemies leap from hiding! You must fight or flee!",
+                event_type="combat",
+                choices=[
+                    {"text": "Fight!", "effect": "combat", "enemies": ["goblin", "goblin"]},
+                    {"text": "Flee!", "effect": "flee"}
+                ]
             )
-            self.events[event.id] = event
+        }
     
     def get_current_location(self) -> Optional[Location]:
-        """Get current location object"""
+        """Get the current location"""
         return self.locations.get(self.current_location)
     
     def travel_to(self, location_id: str, player: 'Character') -> Tuple[bool, str]:
-        """Travel to a location"""
-        current = self.get_current_location()
-        if not current:
-            return False, "You are nowhere."
-        
-        if location_id not in current.connections:
-            return False, "Cannot travel there from here."
-        
-        destination = self.locations.get(location_id)
-        if not destination:
+        """Travel to a new location"""
+        if location_id not in self.locations:
             return False, "Location does not exist."
         
-        # Check level requirement
-        if player.level < destination.level_range[0]:
-            return False, f"This area is too dangerous for you (Recommended level: {destination.level_range[0]})."
+        current = self.get_current_location()
+        if current and location_id not in current.connections:
+            return False, "You cannot travel there from here."
         
-        # Move player
-        old_location = current.id
+        # Update current location
         self.current_location = location_id
+        location = self.locations[location_id]
         
         # Mark as discovered
-        destination.discovered = True
-        destination.visited_count += 1
-        self.discovered_locations.add(location_id)
-        player.position = location_id
+        if not location.discovered:
+            location.discovered = True
+            self.discovered_locations.add(location_id)
+            message = f"Discovered: {location.name}!"
+        else:
+            message = f"Traveled to: {location.name}"
+        
+        location.visited_count += 1
         
         # Advance time
         self.advance_time(1)
         
-        return True, f"Traveled to {destination.name}."
+        return True, message
+    
+    def explore(self, player: 'Character') -> Tuple[List[str], Optional[Any]]:
+        """Explore the current location"""
+        location = self.get_current_location()
+        messages = []
+        encounter = None
+        
+        if not location:
+            return ["You are nowhere."], None
+        
+        # Check for random encounters based on danger level
+        if location.danger_level > 0:
+            encounter_chance = location.danger_level * 0.2
+            
+            if random.random() < encounter_chance:
+                # Generate encounter
+                from systems.combat import EnemyFactory
+                enemy_level = random.randint(location.level_range[0], location.level_range[1])
+                enemy = EnemyFactory.get_random_enemy(
+                    min_level=max(1, enemy_level - 2),
+                    max_level=enemy_level + 2
+                )
+                if enemy:
+                    messages.append(f"You encounter a {enemy.name}!")
+                    encounter = enemy
+                    return messages, encounter
+        
+        # Check for events
+        if location.events and random.random() < 0.3:
+            event_id = random.choice(location.events)
+            event = self.events.get(event_id)
+            if event and (not event.one_time or not event.triggered):
+                messages.append(f"Event: {event.name}")
+                encounter = event
+                return messages, encounter
+        
+        # Random findings
+        findings = [
+            "You find some interesting plants.",
+            "You discover old tracks.",
+            "You find a hidden cache of supplies.",
+            "You spot wildlife in the distance.",
+            "You find nothing of interest."
+        ]
+        messages.append(random.choice(findings))
+        
+        # Small chance to find gold
+        if random.random() < 0.2:
+            gold = random.randint(1, 10) * location.danger_level
+            player.add_gold(gold)
+            messages.append(f"You found {gold} gold!")
+        
+        return messages, encounter
     
     def advance_time(self, hours: int = 1):
         """Advance game time"""
@@ -523,19 +459,17 @@ class WorldMap:
             self.day += 1
         
         # Update time of day
-        if 5 <= self.hour < 7:
+        if 5 <= self.hour < 8:
             self.time_of_day = TimeOfDay.DAWN
-        elif 7 <= self.hour < 12:
+        elif 8 <= self.hour < 12:
             self.time_of_day = TimeOfDay.MORNING
-        elif self.hour == 12:
+        elif 12 <= self.hour < 14:
             self.time_of_day = TimeOfDay.NOON
-        elif 13 <= self.hour < 17:
+        elif 14 <= self.hour < 18:
             self.time_of_day = TimeOfDay.AFTERNOON
-        elif 17 <= self.hour < 20:
+        elif 18 <= self.hour < 20:
             self.time_of_day = TimeOfDay.DUSK
         elif 20 <= self.hour < 24:
-            self.time_of_day = TimeOfDay.EVENING
-        elif 0 <= self.hour < 5:
             self.time_of_day = TimeOfDay.NIGHT
         else:
             self.time_of_day = TimeOfDay.MIDNIGHT
@@ -544,123 +478,41 @@ class WorldMap:
         if random.random() < 0.1:
             self.weather = random.choice(list(Weather))
     
-    def get_random_event(self) -> Optional[WorldEvent]:
-        """Get a random event that can trigger"""
-        available_events = [
-            event for event in self.events.values()
-            if not event.triggered or not event.one_time
-        ]
-        
-        if not available_events or random.random() > 0.15:
-            return None
-        
-        return random.choice(available_events)
-    
-    def explore(self, player: 'Character') -> Tuple[List[str], Optional[Any]]:
-        """Explore current location for events, items, or enemies"""
-        location = self.get_current_location()
-        if not location:
-            return ["You cannot explore here."], None
-        
-        messages = []
-        encounter = None
-        
-        # Chance for random event
-        event = self.get_random_event()
-        if event:
-            messages.append(f"\n{'='*50}")
-            messages.append(f"EVENT: {event.name}")
-            messages.append(f"{'='*50}")
-            messages.append(event.description)
-            return messages, event
-        
-        # Chance for enemy encounter
-        if location.enemies and random.random() < 0.3 + (location.danger_level * 0.1):
-            from systems.combat import EnemyFactory
-            
-            enemy_template = random.choice(location.enemies)
-            enemy_level = random.randint(*location.level_range)
-            enemy = EnemyFactory.create_enemy(enemy_template, enemy_level)
-            
-            if enemy:
-                messages.append(f"\n⚔️ You encountered a {enemy.name}!")
-                encounter = enemy
-                return messages, encounter
-        
-        # Chance to find items
-        if location.items and random.random() < 0.2:
-            from core.items import get_item
-            
-            item_template = random.choice(location.items)
-            item = get_item(item_template)
-            
-            if item:
-                messages.append(f"\n📦 You found: {item.name}!")
-                return messages, item
-        
-        # Nothing found
-        messages.append("\nYou explore the area but find nothing of interest.")
-        messages.append("The area seems peaceful for now.")
-        
-        return messages, None
-    
     def get_time_display(self) -> str:
-        """Get formatted time display"""
-        period_emoji = {
+        """Get time and weather display"""
+        time_icons = {
             TimeOfDay.DAWN: "🌅",
             TimeOfDay.MORNING: "☀️",
-            TimeOfDay.NOON: "🌞",
+            TimeOfDay.NOON: "☀️",
             TimeOfDay.AFTERNOON: "🌤️",
-            TimeOfDay.DUSK: "🌇",
-            TimeOfDay.EVENING: "🌙",
-            TimeOfDay.NIGHT: "🌑",
+            TimeOfDay.DUSK: "🌆",
+            TimeOfDay.NIGHT: "🌙",
             TimeOfDay.MIDNIGHT: "🌙"
         }
         
-        weather_emoji = {
+        weather_icons = {
             Weather.CLEAR: "☀️",
             Weather.CLOUDY: "☁️",
             Weather.RAIN: "🌧️",
             Weather.STORM: "⛈️",
-            Weather.SNOW: "❄️",
+            Weather.SNOW: "🌨️",
             Weather.FOG: "🌫️",
-            Weather.SANDSTORM: "🌪️",
-            Weather.BLOOD_MOON: "🔴",
-            Weather.AURORA: "🌌"
+            Weather.WINDY: "💨"
         }
         
-        hour_12 = self.hour % 12
-        if hour_12 == 0:
-            hour_12 = 12
-        am_pm = "AM" if self.hour < 12 else "PM"
+        icon = time_icons.get(self.time_of_day, "⏰")
+        weather_icon = weather_icons.get(self.weather, "🌡️")
         
-        return f"Day {self.day} | {hour_12}:00 {am_pm} | {period_emoji[self.time_of_day]} {self.time_of_day.value} | {weather_emoji[self.weather]} {self.weather.value}"
+        return f"{icon} Day {self.day}, {self.time_of_day.value.title()} | {weather_icon} {self.weather.value.title()}"
     
-    def register_location(self, loc_data: Dict[str, Any]) -> bool:
+    def register_location(self, location_data: Dict[str, Any]) -> bool:
         """Register a new location from plugin data"""
         try:
-            location = Location(
-                id=loc_data["id"],
-                name=loc_data["name"],
-                description=loc_data["description"],
-                location_type=LocationType(loc_data.get("location_type", "wilderness")),
-                level_range=tuple(loc_data.get("level_range", (1, 5))),
-                connections=loc_data.get("connections", []),
-                npcs=loc_data.get("npcs", []),
-                shops=loc_data.get("shops", []),
-                enemies=loc_data.get("enemies", []),
-                items=loc_data.get("items", []),
-                events=loc_data.get("events", []),
-                danger_level=loc_data.get("danger_level", 1),
-                special_features=loc_data.get("special_features", {})
-            )
-            
+            location = Location.from_dict(location_data)
             self.locations[location.id] = location
-            print(f"  [Extended World] Registered location: {location.name}")
             return True
-            
         except Exception as e:
-            print(f"  [Extended World] Error registering location {loc_data.get('id', 'unknown')}: {e}")
+            print(f"Error registering location: {e}")
             return False
     
     def register_locations(self, locations_data: Dict[str, Dict[str, Any]]) -> int:

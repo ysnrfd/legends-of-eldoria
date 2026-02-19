@@ -52,14 +52,27 @@ class CraftingRecipe:
         if not skill or skill.current_level < self.skill_level:
             return False, f"Requires {self.skill_required} level {self.skill_level}"
         
-        # Check materials
+        # Check materials - use item IDs instead of display names
         for material_id, quantity in self.materials.items():
-            if not player.inventory.has_item(material_id.replace("_", " ").title(), quantity):
-                return False, f"Missing materials"
+            # Try to find item by ID first, then by name
+            has_item = False
+            for item in player.inventory.items:
+                item_id = item.name.lower().replace(" ", "_")
+                if item_id == material_id and item.quantity >= quantity:
+                    has_item = True
+                    break
+            
+            if not has_item:
+                return False, f"Missing materials: {material_id.replace('_', ' ').title()}"
         
         # Check tools
         for tool in self.tools_required:
-            if not player.inventory.has_item(tool):
+            has_tool = False
+            for item in player.inventory.items:
+                if item.name.lower() == tool.lower():
+                    has_tool = True
+                    break
+            if not has_tool:
                 return False, f"Missing tool: {tool}"
         
         return True, "Can craft"
@@ -87,244 +100,164 @@ class CraftingRecipe:
             "experience_gained": self.experience_gained,
             "description": self.description
         }
+    
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'CraftingRecipe':
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            category=CraftingCategory(data["category"]),
+            result_item=data["result_item"],
+            result_quantity=data.get("result_quantity", 1),
+            materials=data.get("materials", {}),
+            skill_required=data.get("skill_required", "Crafting"),
+            skill_level=data.get("skill_level", 1),
+            tools_required=data.get("tools_required", []),
+            success_rate=data.get("success_rate", 0.9),
+            quality_range=tuple(data.get("quality_range", [1, 3])),
+            experience_gained=data.get("experience_gained", 10),
+            description=data.get("description", "")
+        )
 
 
 class CraftingManager:
-    """Manages crafting recipes and processes"""
+    """Manages crafting recipes and operations"""
     
     def __init__(self):
         self.recipes: Dict[str, CraftingRecipe] = {}
         self._init_recipes()
     
     def _init_recipes(self):
-        """Initialize crafting recipes"""
-        recipes_data = [
-            # Blacksmith Recipes
-            {
-                "id": "craft_iron_sword",
-                "name": "Iron Sword",
-                "category": CraftingCategory.BLACKSMITH,
-                "result_item": "iron_sword",
-                "materials": {"iron_ore": 3, "coal": 1},
-                "skill_required": "Crafting",
-                "skill_level": 1,
-                "tools_required": ["hammer"],
-                "success_rate": 0.85,
-                "experience_gained": 15,
-                "description": "Forge a basic iron sword."
-            },
-            {
-                "id": "craft_steel_sword",
-                "name": "Steel Sword",
-                "category": CraftingCategory.BLACKSMITH,
-                "result_item": "steel_greatsword",
-                "materials": {"steel_ingot": 3, "iron_ore": 2, "coal": 2},
-                "skill_required": "Crafting",
-                "skill_level": 3,
-                "tools_required": ["hammer", "anvil"],
-                "success_rate": 0.75,
-                "experience_gained": 30,
-                "description": "Forge a quality steel sword."
-            },
-            {
-                "id": "craft_leather_armor",
-                "name": "Leather Armor",
-                "category": CraftingCategory.LEATHERWORKING,
-                "result_item": "leather_armor",
-                "materials": {"leather": 5, "thread": 2},
-                "skill_required": "Crafting",
-                "skill_level": 1,
-                "tools_required": ["needle"],
-                "success_rate": 0.9,
-                "experience_gained": 20,
-                "description": "Craft basic leather armor."
-            },
-            {
-                "id": "craft_chainmail",
-                "name": "Chainmail",
-                "category": CraftingCategory.BLACKSMITH,
-                "result_item": "chainmail",
-                "materials": {"iron_ore": 5, "steel_ingot": 2},
-                "skill_required": "Crafting",
-                "skill_level": 4,
-                "tools_required": ["hammer", "anvil", "pliers"],
-                "success_rate": 0.7,
-                "experience_gained": 40,
-                "description": "Forge chainmail armor."
-            },
-            {
-                "id": "craft_plate_armor",
-                "name": "Plate Armor",
-                "category": CraftingCategory.BLACKSMITH,
-                "result_item": "plate_armor",
-                "materials": {"steel_ingot": 8, "iron_ore": 4, "leather": 2},
-                "skill_required": "Crafting",
-                "skill_level": 7,
-                "tools_required": ["hammer", "anvil", "forge"],
-                "success_rate": 0.6,
-                "experience_gained": 75,
-                "description": "Forge heavy plate armor."
-            },
+        """Initialize default recipes"""
+        default_recipes = {
+            # Blacksmithing
+            "iron_sword": CraftingRecipe(
+                id="iron_sword",
+                name="Iron Sword",
+                category=CraftingCategory.BLACKSMITH,
+                result_item="iron_sword",
+                materials={"iron_ore": 3, "leather": 1},
+                skill_required="Crafting",
+                skill_level=2,
+                success_rate=0.85,
+                experience_gained=25,
+                description="Forge a basic iron sword."
+            ),
+            "steel_sword": CraftingRecipe(
+                id="steel_sword",
+                name="Steel Sword",
+                category=CraftingCategory.BLACKSMITH,
+                result_item="steel_sword",
+                materials={"iron_ore": 5, "magic_essence": 1},
+                skill_required="Crafting",
+                skill_level=5,
+                success_rate=0.75,
+                experience_gained=50,
+                description="Forge a quality steel sword."
+            ),
+            "iron_armor": CraftingRecipe(
+                id="iron_armor",
+                name="Iron Armor",
+                category=CraftingCategory.BLACKSMITH,
+                result_item="iron_armor",
+                materials={"iron_ore": 8, "leather": 2},
+                skill_required="Crafting",
+                skill_level=3,
+                success_rate=0.80,
+                experience_gained=40,
+                description="Forge protective iron armor."
+            ),
             
-            # Alchemy Recipes
-            {
-                "id": "craft_health_potion",
-                "name": "Health Potion",
-                "category": CraftingCategory.ALCHEMY,
-                "result_item": "health_potion",
-                "materials": {"herb": 3, "crystal_vial": 1},
-                "skill_required": "Crafting",
-                "skill_level": 1,
-                "tools_required": ["mortar_pestle"],
-                "success_rate": 0.95,
-                "experience_gained": 10,
-                "description": "Brew a healing potion."
-            },
-            {
-                "id": "craft_greater_health_potion",
-                "name": "Greater Health Potion",
-                "category": CraftingCategory.ALCHEMY,
-                "result_item": "health_potion_greater",
-                "materials": {"herb": 6, "magic_crystal": 1, "crystal_vial": 1},
-                "skill_required": "Crafting",
-                "skill_level": 4,
-                "tools_required": ["mortar_pestle", "alchemy_table"],
-                "success_rate": 0.8,
-                "experience_gained": 25,
-                "description": "Brew a powerful healing potion."
-            },
-            {
-                "id": "craft_mana_potion",
-                "name": "Mana Potion",
-                "category": CraftingCategory.ALCHEMY,
-                "result_item": "mana_potion",
-                "materials": {"magic_crystal": 2, "crystal_vial": 1},
-                "skill_required": "Crafting",
-                "skill_level": 2,
-                "tools_required": ["mortar_pestle"],
-                "success_rate": 0.9,
-                "experience_gained": 15,
-                "description": "Brew a mana restoration potion."
-            },
-            {
-                "id": "craft_antidote",
-                "name": "Antidote",
-                "category": CraftingCategory.ALCHEMY,
-                "result_item": "antidote",
-                "materials": {"herb": 2, "purifying_powder": 1},
-                "skill_required": "Crafting",
-                "skill_level": 1,
-                "tools_required": ["mortar_pestle"],
-                "success_rate": 0.95,
-                "experience_gained": 8,
-                "description": "Create a cure for poison."
-            },
+            # Alchemy
+            "health_potion": CraftingRecipe(
+                id="health_potion",
+                name="Health Potion",
+                category=CraftingCategory.ALCHEMY,
+                result_item="health_potion",
+                materials={"herb": 2},
+                skill_required="Magic",
+                skill_level=1,
+                success_rate=0.90,
+                experience_gained=15,
+                description="Brew a healing potion."
+            ),
+            "mana_potion": CraftingRecipe(
+                id="mana_potion",
+                name="Mana Potion",
+                category=CraftingCategory.ALCHEMY,
+                result_item="mana_potion",
+                materials={"herb": 1, "magic_essence": 1},
+                skill_required="Magic",
+                skill_level=3,
+                success_rate=0.85,
+                experience_gained=20,
+                description="Brew a mana restoration potion."
+            ),
+            "elixir": CraftingRecipe(
+                id="elixir",
+                name="Elixir",
+                category=CraftingCategory.ALCHEMY,
+                result_item="elixir",
+                materials={"health_potion": 1, "mana_potion": 1, "magic_essence": 2},
+                skill_required="Magic",
+                skill_level=5,
+                success_rate=0.70,
+                experience_gained=50,
+                description="Brew a powerful elixir."
+            ),
             
-            # Enchanting Recipes
-            {
-                "id": "enchant_weapon_fire",
-                "name": "Fire Enchant Weapon",
-                "category": CraftingCategory.ENCHANTING,
-                "result_item": "flame_blade",
-                "materials": {"weapon": 1, "fire_essence": 2, "magic_crystal": 3},
-                "skill_required": "Crafting",
-                "skill_level": 5,
-                "tools_required": ["enchanting_table"],
-                "success_rate": 0.6,
-                "experience_gained": 50,
-                "description": "Enchant a weapon with fire damage."
-            },
-            {
-                "id": "enchant_armor_protection",
-                "name": "Protective Enchant",
-                "category": CraftingCategory.ENCHANTING,
-                "result_item": "mage_robes",
-                "materials": {"armor": 1, "protection_rune": 1, "magic_crystal": 2},
-                "skill_required": "Crafting",
-                "skill_level": 4,
-                "tools_required": ["enchanting_table"],
-                "success_rate": 0.7,
-                "experience_gained": 40,
-                "description": "Enchant armor with magical protection."
-            },
+            # Enchanting
+            "enchanted_ring": CraftingRecipe(
+                id="enchanted_ring",
+                name="Enchanted Ring",
+                category=CraftingCategory.ENCHANTING,
+                result_item="silver_ring",
+                materials={"silver_ring": 1, "magic_essence": 2},
+                skill_required="Magic",
+                skill_level=4,
+                success_rate=0.75,
+                experience_gained=35,
+                description="Enchant a ring with magical properties."
+            ),
             
-            # Cooking Recipes
-            {
-                "id": "cook_rations",
-                "name": "Travel Rations",
-                "category": CraftingCategory.COOKING,
-                "result_item": "rations",
-                "materials": {"raw_meat": 2, "herb": 1},
-                "skill_required": "Crafting",
-                "skill_level": 1,
-                "tools_required": [],
-                "success_rate": 0.95,
-                "experience_gained": 5,
-                "description": "Prepare travel rations."
-            },
-            
-            # Jewelcrafting Recipes
-            {
-                "id": "craft_silver_ring",
-                "name": "Silver Ring",
-                "category": CraftingCategory.JEWELCRAFTING,
-                "result_item": "silver_ring",
-                "materials": {"silver_ingot": 1, "gem": 1},
-                "skill_required": "Crafting",
-                "skill_level": 2,
-                "tools_required": ["jewelers_kit"],
-                "success_rate": 0.85,
-                "experience_gained": 20,
-                "description": "Craft a silver ring."
-            },
-            {
-                "id": "craft_ruby_amulet",
-                "name": "Ruby Amulet",
-                "category": CraftingCategory.JEWELCRAFTING,
-                "result_item": "ruby_amulet",
-                "materials": {"gold_ingot": 1, "ruby": 1, "magic_crystal": 1},
-                "skill_required": "Crafting",
-                "skill_level": 5,
-                "tools_required": ["jewelers_kit"],
-                "success_rate": 0.7,
-                "experience_gained": 45,
-                "description": "Craft a powerful ruby amulet."
-            }
-        ]
-        
-        for recipe_data in recipes_data:
-            recipe = CraftingRecipe(
-                id=recipe_data["id"],
-                name=recipe_data["name"],
-                category=CraftingCategory(recipe_data["category"]),
-                result_item=recipe_data["result_item"],
-                result_quantity=recipe_data.get("result_quantity", 1),
-                materials=recipe_data.get("materials", {}),
-                skill_required=recipe_data.get("skill_required", "Crafting"),
-                skill_level=recipe_data.get("skill_level", 1),
-                tools_required=recipe_data.get("tools_required", []),
-                success_rate=recipe_data.get("success_rate", 0.9),
-                quality_range=recipe_data.get("quality_range", (1, 3)),
-                experience_gained=recipe_data.get("experience_gained", 10),
-                description=recipe_data.get("description", "")
+            # Cooking
+            "traveler_meal": CraftingRecipe(
+                id="traveler_meal",
+                name="Traveler's Meal",
+                category=CraftingCategory.COOKING,
+                result_item="traveler_meal",
+                materials={"herb": 1},
+                skill_required="Survival",
+                skill_level=1,
+                success_rate=0.95,
+                experience_gained=10,
+                description="Prepare a simple but nourishing meal."
             )
-            self.recipes[recipe.id] = recipe
+        }
+        
+        for recipe_id, recipe in default_recipes.items():
+            self.recipes[recipe_id] = recipe
+    
+    def get_recipe(self, recipe_id: str) -> Optional[CraftingRecipe]:
+        """Get a recipe by ID"""
+        return self.recipes.get(recipe_id)
     
     def get_recipes_by_category(self, category: CraftingCategory) -> List[CraftingRecipe]:
         """Get all recipes in a category"""
         return [r for r in self.recipes.values() if r.category == category]
     
     def get_available_recipes(self, player: 'Character') -> List[CraftingRecipe]:
-        """Get recipes the player can potentially craft"""
-        return [
-            r for r in self.recipes.values()
-            if player.skills.get(r.skill_required, None) and
-            player.skills[r.skill_required].current_level >= r.skill_level
-        ]
+        """Get recipes the player can craft"""
+        available = []
+        for recipe in self.recipes.values():
+            can_craft, _ = recipe.can_craft(player)
+            if can_craft:
+                available.append(recipe)
+        return available
     
     def craft(self, recipe_id: str, player: 'Character') -> Tuple[bool, str, Optional[Item]]:
         """Attempt to craft an item"""
-        recipe = self.recipes.get(recipe_id)
+        recipe = self.get_recipe(recipe_id)
         if not recipe:
             return False, "Recipe not found.", None
         
@@ -333,9 +266,22 @@ class CraftingManager:
         if not can_craft:
             return False, message, None
         
-        # Remove materials
+        # Remove materials - use item IDs
         for material_id, quantity in recipe.materials.items():
-            player.inventory.remove_item(material_id.replace("_", " ").title(), quantity)
+            # Find item by ID
+            removed = False
+            for item in player.inventory.items:
+                item_id = item.name.lower().replace(" ", "_")
+                if item_id == material_id:
+                    if item.quantity <= quantity:
+                        player.inventory.items.remove(item)
+                    else:
+                        item.quantity -= quantity
+                    removed = True
+                    break
+            
+            if not removed:
+                return False, f"Failed to remove material: {material_id}", None
         
         # Determine success
         success_roll = random.random()

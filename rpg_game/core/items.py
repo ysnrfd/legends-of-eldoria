@@ -38,7 +38,8 @@ class Weapon(Item):
     
     def __post_init__(self):
         self.item_type = ItemType.WEAPON
-        super().__post_init__()
+        self.equippable = True
+        self.stackable = False
     
     def get_damage(self) -> int:
         """Get random damage value"""
@@ -83,8 +84,7 @@ class Weapon(Item):
             "critical_damage": self.critical_damage,
             "range": self.range,
             "two_handed": self.two_handed,
-            "stat_requirements": self.stat_requirements,
-            "item_type": "weapon"
+            "stat_requirements": self.stat_requirements
         })
         return data
 
@@ -95,32 +95,37 @@ class Weapon(Item):
 
 @dataclass
 class Armor(Item):
-    """Armor item with defense and resistances"""
+    """Armor item with defense properties"""
     slot: EquipmentSlot = EquipmentSlot.CHEST
-    defense: int = 0
+    defense: int = 1
     magic_defense: int = 0
     resistances: Dict[str, float] = field(default_factory=dict)
     stat_bonuses: Dict[str, int] = field(default_factory=dict)
     
     def __post_init__(self):
         self.item_type = ItemType.ARMOR
-        super().__post_init__()
+        self.equippable = True
+        self.stackable = False
     
     def get_total_defense(self) -> int:
-        """Get combined defense"""
+        """Get total defense value"""
         return self.defense + self.magic_defense
     
     def get_display_stats(self) -> str:
         """Get armor stats display"""
-        lines = [f"Slot: {self.slot.value.replace('_', ' ').title()}"]
-        if self.defense > 0:
-            lines.append(f"Physical Defense: {self.defense}")
-        if self.magic_defense > 0:
-            lines.append(f"Magic Defense: {self.magic_defense}")
-        for dtype, res in self.resistances.items():
-            lines.append(f"{dtype.title()} Resistance: {res * 100:.0f}%")
-        for stat, bonus in self.stat_bonuses.items():
-            lines.append(f"+{bonus} {stat.title()}")
+        lines = [
+            f"Slot: {self.slot.value.replace('_', ' ').title()}",
+            f"Defense: {self.defense}",
+            f"Magic Defense: {self.magic_defense}"
+        ]
+        if self.resistances:
+            lines.append("Resistances:")
+            for dtype, value in self.resistances.items():
+                lines.append(f"  {dtype}: {value*100:.0f}%")
+        if self.stat_bonuses:
+            lines.append("Stat Bonuses:")
+            for stat, bonus in self.stat_bonuses.items():
+                lines.append(f"  {stat}: +{bonus}")
         return "\n".join(lines)
     
     def to_dict(self) -> Dict:
@@ -130,8 +135,7 @@ class Armor(Item):
             "defense": self.defense,
             "magic_defense": self.magic_defense,
             "resistances": self.resistances,
-            "stat_bonuses": self.stat_bonuses,
-            "item_type": "armor"
+            "stat_bonuses": self.stat_bonuses
         })
         return data
 
@@ -142,57 +146,50 @@ class Armor(Item):
 
 @dataclass
 class Consumable(Item):
-    """Consumable item with restoration and temporary effects"""
+    """Consumable item with effects"""
     hp_restore: int = 0
     mp_restore: int = 0
     stamina_restore: int = 0
-    temporary_effects: List[Tuple[str, int, int]] = field(default_factory=list)
+    temporary_effects: List[Tuple[StatusEffectType, int, int]] = field(default_factory=list)
     cooldown: int = 0
-    use_message: str = ""
+    use_message: str = "You use the item."
     
     def __post_init__(self):
         self.item_type = ItemType.CONSUMABLE
+        self.usable = True
         self.stackable = True
-        super().__post_init__()
     
-    def use(self, user: Entity) -> Tuple[bool, str]:
-        """Use the consumable on an entity"""
-        messages = []
+    def use(self, target: Entity) -> Tuple[bool, str]:
+        """Use the consumable on a target"""
+        messages = [self.use_message]
         
+        # Restore HP
         if self.hp_restore > 0:
-            healed = user.heal(self.hp_restore)
-            messages.append(f"+{healed} HP")
+            old_hp = target.current_hp
+            target.heal(self.hp_restore)
+            actual_heal = target.current_hp - old_hp
+            messages.append(f"Restored {actual_heal} HP!")
         
+        # Restore MP
         if self.mp_restore > 0:
-            mp = user.restore_mp(self.mp_restore)
-            messages.append(f"+{mp} MP")
+            old_mp = target.current_mp
+            target.restore_mp(self.mp_restore)
+            actual_restore = target.current_mp - old_mp
+            messages.append(f"Restored {actual_restore} MP!")
         
+        # Restore Stamina
         if self.stamina_restore > 0:
-            stamina = user.restore_stamina(self.stamina_restore)
-            messages.append(f"+{stamina} Stamina")
+            old_stamina = target.current_stamina
+            target.restore_stamina(self.stamina_restore)
+            actual_restore = target.current_stamina - old_stamina
+            messages.append(f"Restored {actual_restore} Stamina!")
         
-        for effect_name, duration, strength in self.temporary_effects:
-            effect_type = StatusEffectType(effect_name)
-            user.apply_status_effect(effect_type, duration, strength)
-            messages.append(f"Applied {effect_name} ({duration} turns)")
+        # Apply temporary effects
+        for effect_type, duration, strength in self.temporary_effects:
+            target.apply_status_effect(effect_type, duration, strength)
+            messages.append(f"Applied {effect_type.value} for {duration} turns!")
         
-        if self.use_message:
-            messages.append(self.use_message)
-        
-        return True, f"Used {self.name}: {', '.join(messages)}"
-    
-    def get_display_stats(self) -> str:
-        """Get consumable stats display"""
-        lines = []
-        if self.hp_restore > 0:
-            lines.append(f"Restores {self.hp_restore} HP")
-        if self.mp_restore > 0:
-            lines.append(f"Restores {self.mp_restore} MP")
-        if self.stamina_restore > 0:
-            lines.append(f"Restores {self.stamina_restore} Stamina")
-        for effect, duration, strength in self.temporary_effects:
-            lines.append(f"Grants {effect} for {duration} turns")
-        return "\n".join(lines) if lines else "No special effects"
+        return True, "\n".join(messages)
     
     def to_dict(self) -> Dict:
         data = super().to_dict()
@@ -200,10 +197,9 @@ class Consumable(Item):
             "hp_restore": self.hp_restore,
             "mp_restore": self.mp_restore,
             "stamina_restore": self.stamina_restore,
-            "temporary_effects": self.temporary_effects,
+            "temporary_effects": [(e.value, d, s) for e, d, s in self.temporary_effects],
             "cooldown": self.cooldown,
-            "use_message": self.use_message,
-            "item_type": "consumable"
+            "use_message": self.use_message
         })
         return data
 
@@ -214,7 +210,7 @@ class Consumable(Item):
 
 @dataclass
 class Material(Item):
-    """Crafting material item"""
+    """Crafting material"""
     material_type: str = "generic"
     quality: int = 1
     crafting_value: int = 1
@@ -222,39 +218,13 @@ class Material(Item):
     def __post_init__(self):
         self.item_type = ItemType.MATERIAL
         self.stackable = True
-        super().__post_init__()
     
     def to_dict(self) -> Dict:
         data = super().to_dict()
         data.update({
             "material_type": self.material_type,
             "quality": self.quality,
-            "crafting_value": self.crafting_value,
-            "item_type": "material"
-        })
-        return data
-
-
-# =============================================================================
-# ACCESSORIES
-# =============================================================================
-
-@dataclass
-class Accessory(Item):
-    """Accessory item (rings, amulets, etc.)"""
-    stat_bonuses: Dict[str, int] = field(default_factory=dict)
-    special_effects: List[str] = field(default_factory=list)
-    
-    def __post_init__(self):
-        self.item_type = ItemType.ACCESSORY
-        super().__post_init__()
-    
-    def to_dict(self) -> Dict:
-        data = super().to_dict()
-        data.update({
-            "stat_bonuses": self.stat_bonuses,
-            "special_effects": self.special_effects,
-            "item_type": "accessory"
+            "crafting_value": self.crafting_value
         })
         return data
 
@@ -267,23 +237,9 @@ class ItemFactory:
     """Factory for creating items from data"""
     
     @staticmethod
-    def _get_rarity(rarity_str: str) -> Rarity:
-        """Convert rarity string to Rarity enum"""
-        rarity_map = {
-            "Common": Rarity.COMMON,
-            "Uncommon": Rarity.UNCOMMON,
-            "Rare": Rarity.RARE,
-            "Epic": Rarity.EPIC,
-            "Legendary": Rarity.LEGENDARY,
-            "Mythic": Rarity.MYTHIC,
-            "Divine": Rarity.DIVINE
-        }
-        return rarity_map.get(rarity_str, Rarity.COMMON)
-    
-    @staticmethod
-    def create_item(data: Dict) -> Item:
-        """Create appropriate item type from dictionary"""
-        item_type = data.get("item_type", "item")
+    def create_item(data: Dict[str, Any]) -> Optional[Item]:
+        """Create an item from dictionary data"""
+        item_type = data.get("item_type", "material")
         
         if item_type == "weapon":
             return ItemFactory._create_weapon(data)
@@ -296,102 +252,138 @@ class ItemFactory:
         elif item_type == "accessory":
             return ItemFactory._create_accessory(data)
         else:
+            # Generic item
             return Item(
-                name=data["name"],
-                item_type=ItemType(data.get("item_type", "material")),
-                rarity=ItemFactory._get_rarity(data.get("rarity", "Common")),
-                value=data.get("value", 1),
-                weight=data.get("weight", 0.1),
-                stackable=data.get("stackable", False),
-                max_stack=data.get("max_stack", 99),
-                quantity=data.get("quantity", 1),
+                name=data.get("name", "Unknown Item"),
                 description=data.get("description", ""),
+                item_type=ItemType(item_type) if item_type in [t.value for t in ItemType] else ItemType.MATERIAL,
+                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                value=data.get("value", 0),
+                weight=data.get("weight", 0.0),
+                quantity=data.get("quantity", 1),
                 level_required=data.get("level_required", 1)
             )
     
     @staticmethod
-    def _create_weapon(data: Dict) -> Weapon:
-        return Weapon(
-            name=data["name"],
-            rarity=ItemFactory._get_rarity(data.get("rarity", "Common")),
-            value=data.get("value", 1),
-            weight=data.get("weight", 1.0),
-            description=data.get("description", ""),
-            level_required=data.get("level_required", 1),
-            damage_min=data.get("damage_min", 1),
-            damage_max=data.get("damage_max", 5),
-            damage_type=DamageType(data.get("damage_type", "physical")),
-            attack_speed=data.get("attack_speed", 1.0),
-            critical_chance=data.get("critical_chance", 0.05),
-            critical_damage=data.get("critical_damage", 2.0),
-            range=data.get("range", 1),
-            two_handed=data.get("two_handed", False),
-            stat_requirements=data.get("stat_requirements", {})
-        )
+    def _create_weapon(data: Dict) -> Optional[Weapon]:
+        try:
+            return Weapon(
+                name=data.get("name", "Unknown Weapon"),
+                description=data.get("description", ""),
+                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                value=data.get("value", 0),
+                weight=data.get("weight", 1.0),
+                quantity=data.get("quantity", 1),
+                level_required=data.get("level_required", 1),
+                damage_min=data.get("damage_min", 1),
+                damage_max=data.get("damage_max", 5),
+                damage_type=DamageType(data.get("damage_type", "physical")) if data.get("damage_type") in [d.value for d in DamageType] else DamageType.PHYSICAL,
+                attack_speed=data.get("attack_speed", 1.0),
+                critical_chance=data.get("critical_chance", 0.05),
+                critical_damage=data.get("critical_damage", 2.0),
+                two_handed=data.get("two_handed", False),
+                stat_requirements=data.get("stat_requirements", {})
+            )
+        except (ValueError, KeyError) as e:
+            print(f"Error creating weapon: {e}")
+            return None
     
     @staticmethod
-    def _create_armor(data: Dict) -> Armor:
-        return Armor(
-            name=data["name"],
-            rarity=ItemFactory._get_rarity(data.get("rarity", "Common")),
-            value=data.get("value", 1),
-            weight=data.get("weight", 1.0),
-            description=data.get("description", ""),
-            level_required=data.get("level_required", 1),
-            slot=EquipmentSlot(data.get("slot", "chest")),
-            defense=data.get("defense", 0),
-            magic_defense=data.get("magic_defense", 0),
-            resistances=data.get("resistances", {}),
-            stat_bonuses=data.get("stat_bonuses", {})
-        )
+    def _create_armor(data: Dict) -> Optional[Armor]:
+        try:
+            slot_value = data.get("slot", "chest")
+            slot = EquipmentSlot(slot_value) if slot_value in [s.value for s in EquipmentSlot] else EquipmentSlot.CHEST
+            
+            return Armor(
+                name=data.get("name", "Unknown Armor"),
+                description=data.get("description", ""),
+                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                value=data.get("value", 0),
+                weight=data.get("weight", 2.0),
+                quantity=data.get("quantity", 1),
+                level_required=data.get("level_required", 1),
+                slot=slot,
+                defense=data.get("defense", 1),
+                magic_defense=data.get("magic_defense", 0),
+                resistances=data.get("resistances", {}),
+                stat_bonuses=data.get("stat_bonuses", {})
+            )
+        except (ValueError, KeyError) as e:
+            print(f"Error creating armor: {e}")
+            return None
     
     @staticmethod
-    def _create_consumable(data: Dict) -> Consumable:
-        return Consumable(
-            name=data["name"],
-            rarity=ItemFactory._get_rarity(data.get("rarity", "Common")),
-            value=data.get("value", 1),
-            weight=data.get("weight", 0.1),
-            description=data.get("description", ""),
-            quantity=data.get("quantity", 1),
-            hp_restore=data.get("hp_restore", 0),
-            mp_restore=data.get("mp_restore", 0),
-            stamina_restore=data.get("stamina_restore", 0),
-            temporary_effects=data.get("temporary_effects", []),
-            cooldown=data.get("cooldown", 0),
-            use_message=data.get("use_message", "")
-        )
+    def _create_consumable(data: Dict) -> Optional[Consumable]:
+        try:
+            effects = []
+            for effect_data in data.get("temporary_effects", []):
+                if isinstance(effect_data, tuple) and len(effect_data) == 3:
+                    effects.append(effect_data)
+                elif isinstance(effect_data, list) and len(effect_data) == 3:
+                    effect_type, duration, strength = effect_data
+                    effects.append((StatusEffectType(effect_type), duration, strength))
+            
+            return Consumable(
+                name=data.get("name", "Unknown Consumable"),
+                description=data.get("description", ""),
+                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                value=data.get("value", 0),
+                weight=data.get("weight", 0.1),
+                quantity=data.get("quantity", 1),
+                level_required=data.get("level_required", 1),
+                hp_restore=data.get("hp_restore", 0),
+                mp_restore=data.get("mp_restore", 0),
+                stamina_restore=data.get("stamina_restore", 0),
+                temporary_effects=effects,
+                cooldown=data.get("cooldown", 0),
+                use_message=data.get("use_message", "You use the item.")
+            )
+        except (ValueError, KeyError) as e:
+            print(f"Error creating consumable: {e}")
+            return None
     
     @staticmethod
-    def _create_material(data: Dict) -> Material:
-        return Material(
-            name=data["name"],
-            rarity=ItemFactory._get_rarity(data.get("rarity", "Common")),
-            value=data.get("value", 1),
-            weight=data.get("weight", 0.1),
-            description=data.get("description", ""),
-            quantity=data.get("quantity", 1),
-            material_type=data.get("material_type", "generic"),
-            quality=data.get("quality", 1),
-            crafting_value=data.get("crafting_value", 1)
-        )
+    def _create_material(data: Dict) -> Optional[Material]:
+        try:
+            return Material(
+                name=data.get("name", "Unknown Material"),
+                description=data.get("description", ""),
+                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                value=data.get("value", 0),
+                weight=data.get("weight", 0.1),
+                quantity=data.get("quantity", 1),
+                level_required=data.get("level_required", 1),
+                material_type=data.get("material_type", "generic"),
+                quality=data.get("quality", 1),
+                crafting_value=data.get("crafting_value", 1)
+            )
+        except (ValueError, KeyError) as e:
+            print(f"Error creating material: {e}")
+            return None
     
     @staticmethod
-    def _create_accessory(data: Dict) -> Accessory:
-        return Accessory(
-            name=data["name"],
-            rarity=ItemFactory._get_rarity(data.get("rarity", "Common")),
-            value=data.get("value", 1),
-            weight=data.get("weight", 0.1),
-            description=data.get("description", ""),
-            level_required=data.get("level_required", 1),
-            stat_bonuses=data.get("stat_bonuses", {}),
-            special_effects=data.get("special_effects", [])
-        )
+    def _create_accessory(data: Dict) -> Optional[Item]:
+        """Create accessory item"""
+        try:
+            return Item(
+                name=data.get("name", "Unknown Accessory"),
+                description=data.get("description", ""),
+                item_type=ItemType.ACCESSORY,
+                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                value=data.get("value", 0),
+                weight=data.get("weight", 0.1),
+                quantity=data.get("quantity", 1),
+                level_required=data.get("level_required", 1),
+                equippable=True,
+                stackable=False
+            )
+        except (ValueError, KeyError) as e:
+            print(f"Error creating accessory: {e}")
+            return None
 
 
 # =============================================================================
-# PREDEFINED ITEMS DATABASE
+# ITEM DATABASE
 # =============================================================================
 
 ITEM_DATABASE = {
@@ -402,12 +394,13 @@ ITEM_DATABASE = {
         "rarity": "Common",
         "value": 10,
         "weight": 2.0,
-        "description": "An old, rusted blade. Still sharp enough to cut.",
+        "description": "An old, rusty sword. Better than nothing.",
         "damage_min": 2,
         "damage_max": 5,
         "damage_type": "physical",
         "attack_speed": 1.0,
-        "critical_chance": 0.02
+        "critical_chance": 0.05,
+        "critical_damage": 1.5
     },
     "iron_sword": {
         "name": "Iron Sword",
@@ -415,88 +408,89 @@ ITEM_DATABASE = {
         "rarity": "Common",
         "value": 50,
         "weight": 2.5,
-        "description": "A well-crafted iron sword.",
-        "damage_min": 5,
-        "damage_max": 10,
+        "description": "A standard iron sword.",
+        "damage_min": 4,
+        "damage_max": 8,
         "damage_type": "physical",
         "attack_speed": 1.0,
-        "critical_chance": 0.03
+        "critical_chance": 0.05,
+        "critical_damage": 1.5,
+        "level_required": 2
     },
-    "steel_greatsword": {
-        "name": "Steel Greatsword",
+    "steel_sword": {
+        "name": "Steel Sword",
         "item_type": "weapon",
         "rarity": "Uncommon",
-        "value": 200,
-        "weight": 5.0,
-        "description": "A massive two-handed blade of quality steel.",
-        "damage_min": 12,
-        "damage_max": 20,
-        "damage_type": "physical",
-        "attack_speed": 0.8,
-        "critical_chance": 0.05,
-        "two_handed": True,
-        "stat_requirements": {"strength": 12}
-    },
-    "flame_blade": {
-        "name": "Flame Blade",
-        "item_type": "weapon",
-        "rarity": "Rare",
-        "value": 1000,
+        "value": 150,
         "weight": 2.5,
-        "description": "A sword imbued with eternal flames.",
-        "damage_min": 10,
-        "damage_max": 15,
-        "damage_type": "fire",
+        "description": "A well-crafted steel sword.",
+        "damage_min": 6,
+        "damage_max": 12,
+        "damage_type": "physical",
         "attack_speed": 1.1,
         "critical_chance": 0.08,
-        "level_required": 10
+        "critical_damage": 1.6,
+        "level_required": 5
+    },
+    "shadow_dagger": {
+        "name": "Shadow Dagger",
+        "item_type": "weapon",
+        "rarity": "Rare",
+        "value": 300,
+        "weight": 1.0,
+        "description": "A dagger that seems to blend with shadows.",
+        "damage_min": 5,
+        "damage_max": 10,
+        "damage_type": "dark",
+        "attack_speed": 1.5,
+        "critical_chance": 0.15,
+        "critical_damage": 2.0,
+        "level_required": 8
     },
     "frost_staff": {
         "name": "Frost Staff",
         "item_type": "weapon",
         "rarity": "Rare",
-        "value": 800,
+        "value": 400,
         "weight": 2.0,
-        "description": "A staff that channels the power of ice.",
+        "description": "A staff that radiates cold energy.",
         "damage_min": 8,
-        "damage_max": 14,
+        "damage_max": 15,
         "damage_type": "ice",
         "attack_speed": 1.0,
-        "critical_chance": 0.06,
-        "level_required": 8,
-        "stat_requirements": {"intelligence": 14}
+        "critical_chance": 0.05,
+        "critical_damage": 1.5,
+        "level_required": 10
     },
-    "shadow_dagger": {
-        "name": "Shadow Dagger",
+    "flame_blade": {
+        "name": "Flame Blade",
         "item_type": "weapon",
         "rarity": "Epic",
-        "value": 2500,
-        "weight": 0.5,
-        "description": "A dagger forged in darkness, it strikes unseen.",
-        "damage_min": 8,
-        "damage_max": 16,
-        "damage_type": "dark",
-        "attack_speed": 1.5,
-        "critical_chance": 0.15,
-        "critical_damage": 2.5,
-        "level_required": 15,
-        "stat_requirements": {"dexterity": 16}
+        "value": 1000,
+        "weight": 3.0,
+        "description": "A sword wreathed in eternal flames.",
+        "damage_min": 15,
+        "damage_max": 25,
+        "damage_type": "fire",
+        "attack_speed": 1.0,
+        "critical_chance": 0.10,
+        "critical_damage": 2.0,
+        "level_required": 15
     },
-    "excalibur": {
-        "name": "Excalibur",
+    "legendary_blade": {
+        "name": "Blade of Legends",
         "item_type": "weapon",
         "rarity": "Legendary",
-        "value": 50000,
-        "weight": 3.0,
-        "description": "The legendary sword of kings. Its holy light banishes evil.",
-        "damage_min": 25,
-        "damage_max": 40,
+        "value": 5000,
+        "weight": 3.5,
+        "description": "A weapon of immense power, spoken of in ancient tales.",
+        "damage_min": 30,
+        "damage_max": 50,
         "damage_type": "holy",
         "attack_speed": 1.2,
-        "critical_chance": 0.12,
-        "critical_damage": 3.0,
-        "level_required": 30,
-        "stat_requirements": {"strength": 18, "charisma": 15}
+        "critical_chance": 0.20,
+        "critical_damage": 2.5,
+        "level_required": 25
     },
     
     # ARMOR
@@ -505,91 +499,76 @@ ITEM_DATABASE = {
         "item_type": "armor",
         "rarity": "Common",
         "value": 5,
-        "weight": 0.5,
-        "description": "Simple cloth clothing. Offers minimal protection.",
+        "weight": 1.0,
+        "description": "Simple cloth clothing.",
         "slot": "chest",
-        "defense": 1
+        "defense": 1,
+        "magic_defense": 0
     },
     "leather_armor": {
         "name": "Leather Armor",
         "item_type": "armor",
         "rarity": "Common",
-        "value": 75,
-        "weight": 4.0,
-        "description": "Sturdy leather armor for basic protection.",
+        "value": 30,
+        "weight": 3.0,
+        "description": "Basic leather protection.",
         "slot": "chest",
-        "defense": 5,
-        "stat_bonuses": {"dexterity": 1}
+        "defense": 3,
+        "magic_defense": 1,
+        "level_required": 2
     },
-    "chainmail": {
-        "name": "Chainmail",
+    "iron_armor": {
+        "name": "Iron Armor",
         "item_type": "armor",
         "rarity": "Uncommon",
-        "value": 200,
-        "weight": 10.0,
-        "description": "Interlocking metal rings provide good protection.",
+        "value": 100,
+        "weight": 8.0,
+        "description": "Sturdy iron plate armor.",
         "slot": "chest",
-        "defense": 12,
-        "magic_defense": 3,
-        "stat_requirements": {"constitution": 12}
+        "defense": 8,
+        "magic_defense": 2,
+        "resistances": {"physical": 0.1},
+        "level_required": 5
     },
-    "plate_armor": {
-        "name": "Plate Armor",
+    "steel_armor": {
+        "name": "Steel Armor",
         "item_type": "armor",
         "rarity": "Rare",
-        "value": 800,
-        "weight": 20.0,
-        "description": "Heavy plate armor for maximum protection.",
+        "value": 300,
+        "weight": 10.0,
+        "description": "High-quality steel armor.",
         "slot": "chest",
-        "defense": 25,
-        "magic_defense": 5,
-        "stat_requirements": {"strength": 14, "constitution": 14}
+        "defense": 12,
+        "magic_defense": 4,
+        "resistances": {"physical": 0.15},
+        "level_required": 10
     },
     "mage_robes": {
         "name": "Mage Robes",
         "item_type": "armor",
         "rarity": "Uncommon",
-        "value": 150,
-        "weight": 1.0,
-        "description": "Enchanted robes that enhance magical abilities.",
+        "value": 80,
+        "weight": 1.5,
+        "description": "Robes enchanted for magical protection.",
         "slot": "chest",
-        "defense": 3,
-        "magic_defense": 10,
-        "stat_bonuses": {"intelligence": 2, "wisdom": 1}
+        "defense": 2,
+        "magic_defense": 8,
+        "stat_bonuses": {"intelligence": 2, "wisdom": 1},
+        "level_required": 5
     },
     "dragon_scale_armor": {
         "name": "Dragon Scale Armor",
         "item_type": "armor",
         "rarity": "Legendary",
-        "value": 25000,
-        "weight": 15.0,
-        "description": "Armor forged from dragon scales. Nearly impenetrable.",
+        "value": 3000,
+        "weight": 12.0,
+        "description": "Armor forged from dragon scales.",
         "slot": "chest",
-        "defense": 40,
-        "magic_defense": 20,
+        "defense": 25,
+        "magic_defense": 15,
         "resistances": {"fire": 0.5, "physical": 0.2},
+        "stat_bonuses": {"constitution": 5},
         "level_required": 25
-    },
-    "iron_helmet": {
-        "name": "Iron Helmet",
-        "item_type": "armor",
-        "rarity": "Common",
-        "value": 40,
-        "weight": 2.0,
-        "description": "A basic iron helmet.",
-        "slot": "head",
-        "defense": 3
-    },
-    "leather_boots": {
-        "name": "Leather Boots",
-        "item_type": "armor",
-        "rarity": "Common",
-        "value": 30,
-        "weight": 1.0,
-        "description": "Comfortable leather footwear.",
-        "slot": "feet",
-        "defense": 2,
-        "stat_bonuses": {"dexterity": 1}
     },
     
     # CONSUMABLES
@@ -597,70 +576,63 @@ ITEM_DATABASE = {
         "name": "Minor Health Potion",
         "item_type": "consumable",
         "rarity": "Common",
-        "value": 25,
-        "weight": 0.2,
-        "description": "A small red potion that restores health.",
-        "hp_restore": 30,
-        "use_message": "You drink the health potion."
+        "value": 15,
+        "weight": 0.5,
+        "description": "Restores a small amount of health.",
+        "hp_restore": 25,
+        "use_message": "You drink the potion and feel refreshed."
     },
     "health_potion": {
         "name": "Health Potion",
         "item_type": "consumable",
-        "rarity": "Uncommon",
-        "value": 75,
-        "weight": 0.2,
-        "description": "A standard health potion.",
-        "hp_restore": 75,
-        "use_message": "You drink the health potion."
+        "rarity": "Common",
+        "value": 40,
+        "weight": 0.5,
+        "description": "Restores health.",
+        "hp_restore": 50,
+        "use_message": "You drink the potion and feel much better."
     },
-    "health_potion_greater": {
-        "name": "Greater Health Potion",
+    "health_potion_major": {
+        "name": "Major Health Potion",
         "item_type": "consumable",
-        "rarity": "Rare",
-        "value": 200,
-        "weight": 0.2,
-        "description": "A powerful health restoration potion.",
-        "hp_restore": 150,
-        "use_message": "You drink the greater health potion."
+        "rarity": "Uncommon",
+        "value": 100,
+        "weight": 0.5,
+        "description": "Restores a large amount of health.",
+        "hp_restore": 100,
+        "use_message": "You drink the potion and feel revitalized."
     },
     "mana_potion": {
         "name": "Mana Potion",
         "item_type": "consumable",
-        "rarity": "Uncommon",
-        "value": 60,
-        "weight": 0.2,
-        "description": "A blue potion that restores magical energy.",
-        "mp_restore": 50,
-        "use_message": "You drink the mana potion."
+        "rarity": "Common",
+        "value": 35,
+        "weight": 0.5,
+        "description": "Restores magical energy.",
+        "mp_restore": 30,
+        "use_message": "You drink the potion and feel magical energy return."
     },
     "stamina_potion": {
         "name": "Stamina Potion",
         "item_type": "consumable",
         "rarity": "Common",
-        "value": 30,
-        "weight": 0.2,
-        "description": "Restores your stamina.",
-        "stamina_restore": 50,
-        "use_message": "You drink the stamina potion."
+        "value": 25,
+        "weight": 0.5,
+        "description": "Restores stamina.",
+        "stamina_restore": 30,
+        "use_message": "You drink the potion and feel energized."
     },
-    "antidote": {
-        "name": "Antidote",
-        "item_type": "consumable",
-        "rarity": "Common",
-        "value": 40,
-        "weight": 0.1,
-        "description": "Cures poison status.",
-        "use_message": "The antidote neutralizes any poison in your system."
-    },
-    "strength_elixir": {
-        "name": "Strength Elixir",
+    "elixir": {
+        "name": "Elixir",
         "item_type": "consumable",
         "rarity": "Rare",
-        "value": 150,
-        "weight": 0.3,
-        "description": "Temporarily increases your strength.",
-        "temporary_effects": [("strength_buff", 5, 3)],
-        "use_message": "You feel a surge of power!"
+        "value": 200,
+        "weight": 0.5,
+        "description": "Restores health, mana, and stamina.",
+        "hp_restore": 50,
+        "mp_restore": 50,
+        "stamina_restore": 50,
+        "use_message": "You drink the elixir and feel completely restored."
     },
     
     # MATERIALS
@@ -669,31 +641,42 @@ ITEM_DATABASE = {
         "item_type": "material",
         "rarity": "Common",
         "value": 5,
-        "weight": 1.0,
-        "description": "Raw iron ore for smelting.",
-        "material_type": "metal",
+        "weight": 2.0,
+        "description": "Raw iron ore that can be smelted.",
+        "material_type": "ore",
         "quality": 1,
-        "crafting_value": 10
+        "crafting_value": 5
     },
-    "steel_ingot": {
-        "name": "Steel Ingot",
+    "leather": {
+        "name": "Leather",
+        "item_type": "material",
+        "rarity": "Common",
+        "value": 3,
+        "weight": 0.5,
+        "description": "Treated animal hide.",
+        "material_type": "leather",
+        "quality": 1,
+        "crafting_value": 3
+    },
+    "magic_essence": {
+        "name": "Magic Essence",
         "item_type": "material",
         "rarity": "Uncommon",
-        "value": 25,
-        "weight": 1.0,
-        "description": "Refined steel for crafting.",
-        "material_type": "metal",
+        "value": 50,
+        "weight": 0.1,
+        "description": "Concentrated magical energy.",
+        "material_type": "magic",
         "quality": 2,
         "crafting_value": 25
     },
-    "dragon_scale": {
-        "name": "Dragon Scale",
+    "dragon_bone": {
+        "name": "Dragon Bone",
         "item_type": "material",
         "rarity": "Epic",
         "value": 500,
-        "weight": 0.5,
-        "description": "A scale from a dragon. Highly valuable for crafting.",
-        "material_type": "special",
+        "weight": 3.0,
+        "description": "The bone of an ancient dragon.",
+        "material_type": "bone",
         "quality": 5,
         "crafting_value": 100
     },

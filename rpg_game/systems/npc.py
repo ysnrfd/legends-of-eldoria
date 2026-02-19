@@ -91,88 +91,102 @@ class NPC:
     schedule: Dict[str, str] = field(default_factory=dict)
     friendship: int = 0
     friendship_max: int = 100
-    friendship_rewards: Dict[int, str] = field(default_factory=dict)
     can_train: List[str] = field(default_factory=list)
     training_cost: int = 100
-    custom_data: Dict[str, Any] = field(default_factory=dict)
+    special_dialogue: Dict[str, str] = field(default_factory=dict)
     
     def get_greeting(self) -> str:
         """Get NPC greeting based on friendship"""
         if self.friendship >= 80:
-            return f"\"My dear friend! It's wonderful to see you!\""
+            return f"{self.name} greets you warmly: 'Welcome back, friend!'"
         elif self.friendship >= 50:
-            return f"\"Good to see you again, friend.\""
+            return f"{self.name} smiles: 'Good to see you again.'"
         elif self.friendship >= 20:
-            return f"\"Hello there.\""
+            return f"{self.name} nods: 'Hello.'"
         else:
-            return f"\"...\""
+            return f"{self.name} looks at you neutrally: 'What do you want?'"
     
-    def get_dialogue(self, node_id: str = None) -> Optional[DialogueNode]:
-        """Get dialogue node"""
-        node_id = node_id or self.current_node
-        return self.dialogue_tree.get(node_id)
+    def get_interactions(self) -> List[str]:
+        """Get available interaction options"""
+        options = []
+        
+        if self.dialogue_tree:
+            options.append("[1] Talk")
+        
+        if self.shop_id or self.shop_items:
+            options.append("[2] Trade")
+        
+        if "heal" in self.services:
+            options.append("[3] Heal (50 gold)")
+        
+        if "rest" in self.services:
+            options.append("[4] Rest")
+        
+        if self.can_train:
+            options.append(f"[5] Train ({self.training_cost} gold)")
+        
+        options.append("[0] Leave")
+        
+        return options
     
-    def advance_dialogue(self, choice_idx: int, player: 'Character') -> Tuple[DialogueAction, Dict[str, Any]]:
+    def get_dialogue(self) -> Optional[DialogueNode]:
+        """Get current dialogue node"""
+        return self.dialogue_tree.get(self.current_node)
+    
+    def advance_dialogue(self, choice_index: int, player: 'Character', quest_manager=None) -> Tuple[DialogueAction, Any]:
         """Advance dialogue based on choice"""
         node = self.get_dialogue()
-        if not node or choice_idx >= len(node.choices):
+        if not node or choice_index >= len(node.choices):
             return DialogueAction.NONE, {}
         
-        choice = node.choices[choice_idx]
+        choice = node.choices[choice_index]
         
         # Check skill check if present
         if choice.skill_check:
-            stat_type, required = choice.skill_check
-            if player.get_stat(stat_type) < required:
-                self.current_node = "skill_fail"
-                return DialogueAction.NONE, {"message": f"Skill check failed (needed {stat_type.value}: {required})"}
+            stat_type, dc = choice.skill_check
+            roll = random.randint(1, 20)
+            stat_bonus = player.stats.get_modifier(stat_type)
+            total = roll + stat_bonus
+            
+            if total >= dc:
+                return choice.action, choice.action_data
+            else:
+                return DialogueAction.NONE, {"message": f"Failed {stat_type.value} check (rolled {total} vs DC {dc})"}
         
-        # Update current node
+        # Move to next node if specified
         if choice.next_node:
             self.current_node = choice.next_node
         
         return choice.action, choice.action_data
     
-    def change_friendship(self, amount: int) -> bool:
-        """Change friendship level, returns True if friendship level changed"""
+    def change_friendship(self, amount: int) -> Tuple[bool, str]:
+        """Change friendship level"""
         old_level = self.friendship
         self.friendship = max(0, min(self.friendship_max, self.friendship + amount))
-        return old_level // 20 != self.friendship // 20
-    
-    def get_interactions(self) -> List[str]:
-        """Get available interactions"""
-        interactions = ["[1] Talk"]
         
-        if self.shop_id or self.shop_items:
-            interactions.append("[2] Trade")
-        
-        if "heal" in self.services:
-            interactions.append("[3] Heal")
-        
-        if "rest" in self.services:
-            interactions.append("[4] Rest")
-        
-        if self.can_train:
-            interactions.append("[5] Train")
-        
-        interactions.append("[0] Leave")
-        
-        return interactions
+        if amount > 0:
+            return True, f"Friendship with {self.name} increased!"
+        elif amount < 0:
+            return True, f"Friendship with {self.name} decreased."
+        return False, ""
     
     def get_display(self) -> str:
-        """Get NPC display info"""
+        """Get NPC display"""
         lines = [
             f"\n{'='*50}",
-            f"👤 {self.name}",
+            f"NPC: {self.name}",
             f"{'='*50}",
             f"{self.description}",
             f"",
-            f"Type: {self.npc_type.value.replace('_', ' ').title()}"
+            f"Type: {self.npc_type.value.replace('_', ' ').title()}",
+            f"Friendship: {self.friendship}/{self.friendship_max}",
         ]
         
-        if self.friendship > 0:
-            hearts = "❤️" * (self.friendship // 20)
-            lines.append(f"Friendship: {hearts} ({self.friendship}/{self.friendship_max})")
+        if self.shop_items:
+            lines.append(f"Shop Items: {len(self.shop_items)}")
+        
+        if self.services:
+            lines.append(f"Services: {', '.join(self.services)}")
         
         return "\n".join(lines)
     
@@ -198,12 +212,13 @@ class NPC:
     
     @classmethod
     def from_dict(cls, data: Dict) -> 'NPC':
-        npc = cls(
+        return cls(
             id=data["id"],
             name=data["name"],
             description=data["description"],
-            npc_type=NPCType(data["npc_type"]),
+            npc_type=NPCType(data.get("npc_type", "villager")),
             location=data.get("location", ""),
+            current_node=data.get("current_node", "start"),
             quest_giver=data.get("quest_giver", False),
             shop_id=data.get("shop_id", ""),
             shop_items=data.get("shop_items", []),
@@ -215,220 +230,197 @@ class NPC:
             can_train=data.get("can_train", []),
             training_cost=data.get("training_cost", 100)
         )
-        npc.current_node = data.get("current_node", "start")
-        return npc
 
 
 class NPCManager:
-    """Manages all NPCs"""
+    """Manages all NPCs in the game"""
     
     def __init__(self):
         self.npcs: Dict[str, NPC] = {}
         self._init_npcs()
     
     def _init_npcs(self):
-        """Initialize NPCs"""
-        npcs_data = [
-            {
-                "id": "elder_thorne",
-                "name": "Elder Thorne",
-                "description": "An elderly man with kind eyes and a long white beard. "
-                             "He wears simple robes and carries a wooden staff.",
-                "npc_type": NPCType.QUEST_GIVER,
-                "location": "start_village",
-                "quest_giver": True,
-                "services": ["information"],
-                "dialogue_greeting": "Welcome, traveler. Our village has seen better days..."
-            },
-            {
-                "id": "blacksmith_gareth",
-                "name": "Gareth the Blacksmith",
-                "description": "A burly man with soot-stained arms and a leather apron. "
-                             "The sounds of his hammer echo from his forge.",
-                "npc_type": NPCType.BLACKSMITH,
-                "location": "start_village",
-                "shop_id": "blacksmith",
-                "shop_items": ["iron_sword", "leather_armor", "iron_helmet", "leather_boots"],
-                "services": ["repair", "craft"],
-                "buy_multiplier": 1.0,
-                "sell_multiplier": 0.4
-            },
-            {
-                "id": "healer_rose",
-                "name": "Rose the Healer",
-                "description": "A gentle woman in flowing green robes. "
-                             "The scent of herbs follows her everywhere.",
-                "npc_type": NPCType.HEALER,
-                "location": "start_village",
-                "shop_id": "herb_shop",
-                "shop_items": ["health_potion_minor", "health_potion", "mana_potion", "antidote", "herb"],
-                "services": ["heal", "cure"],
-                "buy_multiplier": 1.2,
-                "sell_multiplier": 0.5
-            },
-            {
-                "id": "merchant_finn",
-                "name": "Finn the Merchant",
-                "description": "A traveling merchant with a friendly smile and sharp eyes. "
-                             "His pack is filled with various goods.",
-                "npc_type": NPCType.MERCHANT,
-                "location": "start_village",
-                "shop_id": "village_shop",
-                "shop_items": ["health_potion_minor", "stamina_potion", "torch", "rope", "rations"],
-                "services": ["trade"],
-                "buy_multiplier": 1.0,
-                "sell_multiplier": 0.5
-            },
-            {
-                "id": "innkeeper_mara",
-                "name": "Mara the Innkeeper",
-                "description": "A warm-hearted woman who runs the local inn. "
-                             "She offers food, drink, and a place to rest.",
-                "npc_type": NPCType.INNKEEPER,
-                "location": "capital_city",
-                "services": ["rest", "food", "information"],
-                "buy_multiplier": 1.0,
-                "sell_multiplier": 0.3
-            },
-            {
-                "id": "king_aldric",
-                "name": "King Aldric",
-                "description": "The ruler of the realm, sitting upon his golden throne. "
-                             "His crown gleams, but worry lines mark his face.",
-                "npc_type": NPCType.NOBLE,
-                "location": "royal_castle",
-                "quest_giver": True,
-                "services": ["audience"],
-                "friendship_max": 200
-            },
-            {
-                "id": "archmage_silas",
-                "name": "Archmage Silas",
-                "description": "An ancient wizard with flowing robes and a pointed hat. "
-                             "Sparks of magic dance around his fingertips.",
-                "npc_type": NPCType.TRAINER,
-                "location": "capital_city",
-                "shop_id": "magic_shop",
-                "shop_items": ["mana_potion", "magic_crystal", "frost_staff", "spell_scroll"],
-                "services": ["train_magic", "identify"],
-                "can_train": ["Magic", "Wisdom"],
-                "training_cost": 500,
-                "buy_multiplier": 1.5,
-                "sell_multiplier": 0.6
-            },
-            {
-                "id": "guild_master",
-                "name": "Guild Master",
-                "description": "The head of the Adventurer's Guild. "
-                             "His scarred face speaks of many battles.",
-                "npc_type": NPCType.QUEST_GIVER,
-                "location": "capital_city",
-                "quest_giver": True,
-                "services": ["quests", "training"],
-                "can_train": ["Swordsmanship", "Stealth"]
-            },
-            {
-                "id": "fairy_queen",
-                "name": "Queen Titania",
-                "description": "A beautiful fairy with gossamer wings that shimmer with all colors. "
-                             "Her presence brings a sense of wonder.",
-                "npc_type": NPCType.MYSTERIOUS,
-                "location": "fairy_grove",
-                "quest_giver": True,
-                "services": ["blessing", "wishes"],
-                "friendship_max": 150
-            },
-            {
-                "id": "mysterious_stranger",
-                "name": "Mysterious Stranger",
-                "description": "A cloaked figure whose face remains hidden in shadow. "
-                             "They seem to know more than they reveal.",
-                "npc_type": NPCType.MYSTERIOUS,
-                "location": "crossroads",
-                "quest_giver": True,
-                "services": ["information", "quests"]
-            },
-            {
-                "id": "dwarf_smith",
-                "name": "Thorin Ironforge",
-                "description": "A stout dwarf with a magnificent braided beard. "
-                             "His forge produces the finest metalwork in the realm.",
-                "npc_type": NPCType.BLACKSMITH,
-                "location": "mining_town",
-                "shop_id": "dwarf_smithy",
-                "shop_items": ["steel_greatsword", "plate_armor", "chainmail", "steel_shield"],
-                "services": ["craft", "repair", "enchant"],
-                "buy_multiplier": 1.2,
-                "sell_multiplier": 0.5
-            }
-        ]
-        
-        for npc_data in npcs_data:
-            npc = NPC(
-                id=npc_data["id"],
-                name=npc_data["name"],
-                description=npc_data["description"],
-                npc_type=npc_data["npc_type"],
-                location=npc_data.get("location", ""),
-                quest_giver=npc_data.get("quest_giver", False),
-                shop_id=npc_data.get("shop_id", ""),
-                shop_items=npc_data.get("shop_items", []),
-                buy_multiplier=npc_data.get("buy_multiplier", 1.0),
-                sell_multiplier=npc_data.get("sell_multiplier", 0.5),
-                services=npc_data.get("services", []),
-                can_train=npc_data.get("can_train", []),
-                training_cost=npc_data.get("training_cost", 100),
-                friendship_max=npc_data.get("friendship_max", 100)
+        """Initialize default NPCs"""
+        default_npcs = {
+            "village_elder": NPC(
+                id="village_elder",
+                name="Elder Thomas",
+                description="The wise elder of Willowbrook Village.",
+                npc_type=NPCType.QUEST_GIVER,
+                location="start_village",
+                quest_giver=True,
+                services=["heal"],
+                dialogue_tree={
+                    "start": DialogueNode(
+                        id="start",
+                        text="Welcome to Willowbrook, traveler. What brings you to our humble village?",
+                        choices=[
+                            DialogueChoice(
+                                text="I'm looking for adventure.",
+                                next_node="adventure",
+                                action=DialogueAction.NONE
+                            ),
+                            DialogueChoice(
+                                text="Do you have any work for me?",
+                                action=DialogueAction.START_QUEST,
+                                action_data={"quest_id": "first_steps"}
+                            ),
+                            DialogueChoice(
+                                text="Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    ),
+                    "adventure": DialogueNode(
+                        id="adventure",
+                        text="The world is full of dangers and treasures. Be careful out there.",
+                        choices=[
+                            DialogueChoice(
+                                text="Tell me more about the dangers.",
+                                next_node="dangers"
+                            ),
+                            DialogueChoice(
+                                text="Where can I find treasure?",
+                                next_node="treasure"
+                            ),
+                            DialogueChoice(
+                                text="Thank you for the advice.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    ),
+                    "dangers": DialogueNode(
+                        id="dangers",
+                        text="Goblins roam the forests to the east, and ancient ruins hold undead horrors. Tread carefully.",
+                        choices=[
+                            DialogueChoice(
+                                text="I'll be careful. Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    ),
+                    "treasure": DialogueNode(
+                        id="treasure",
+                        text="Rumors speak of a dragon's hoard in the mountains, but few return from such quests.",
+                        choices=[
+                            DialogueChoice(
+                                text="Perhaps I'll seek it one day. Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    )
+                }
+            ),
+            "village_merchant": NPC(
+                id="village_merchant",
+                name="Merchant Gina",
+                description="A friendly merchant who trades goods.",
+                npc_type=NPCType.MERCHANT,
+                location="start_village",
+                shop_items=["health_potion_minor", "iron_sword", "leather_armor", "herb"],
+                services=["rest"],
+                dialogue_tree={
+                    "start": DialogueNode(
+                        id="start",
+                        text="Welcome to my shop! I have the finest goods in the village.",
+                        choices=[
+                            DialogueChoice(
+                                text="Show me your wares.",
+                                action=DialogueAction.OPEN_SHOP
+                            ),
+                            DialogueChoice(
+                                text="Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    )
+                }
+            ),
+            "village_guard": NPC(
+                id="village_guard",
+                name="Guard Captain",
+                description="The captain of the village guard.",
+                npc_type=NPCType.GUARD,
+                location="start_village",
+                can_train=["Swordsmanship"],
+                dialogue_tree={
+                    "start": DialogueNode(
+                        id="start",
+                        text="Halt! State your business in Willowbrook.",
+                        choices=[
+                            DialogueChoice(
+                                text="I'm just a traveler passing through.",
+                                next_node="traveler"
+                            ),
+                            DialogueChoice(
+                                text="I'd like to train with you.",
+                                action=DialogueAction.TRAIN
+                            ),
+                            DialogueChoice(
+                                text="Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    ),
+                    "traveler": DialogueNode(
+                        id="traveler",
+                        text="Very well. Keep the peace and cause no trouble.",
+                        choices=[
+                            DialogueChoice(
+                                text="I will. Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    )
+                }
+            ),
+            "mysterious_stranger": NPC(
+                id="mysterious_stranger",
+                name="Hooded Figure",
+                description="A mysterious figure cloaked in shadows.",
+                npc_type=NPCType.MYSTERIOUS,
+                location="start_village",
+                quest_giver=True,
+                dialogue_tree={
+                    "start": DialogueNode(
+                        id="start",
+                        text="*The figure whispers* I have... special items for those who can afford them.",
+                        choices=[
+                            DialogueChoice(
+                                text="What kind of items?",
+                                next_node="items"
+                            ),
+                            DialogueChoice(
+                                text="I don't trust you.",
+                                action=DialogueAction.NONE
+                            ),
+                            DialogueChoice(
+                                text="Goodbye.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    ),
+                    "items": DialogueNode(
+                        id="items",
+                        text="Things that cannot be found in ordinary shops. Information, artifacts... services.",
+                        choices=[
+                            DialogueChoice(
+                                text="Tell me more.",
+                                action=DialogueAction.START_QUEST,
+                                action_data={"quest_id": "shadow_dealings"}
+                            ),
+                            DialogueChoice(
+                                text="No thanks.",
+                                action=DialogueAction.NONE
+                            )
+                        ]
+                    )
+                }
             )
-            
-            # Add basic dialogue tree
-            npc.dialogue_tree = self._create_basic_dialogue(npc)
-            self.npcs[npc.id] = npc
-    
-    def _create_basic_dialogue(self, npc: NPC) -> Dict[str, DialogueNode]:
-        """Create basic dialogue tree for an NPC"""
-        dialogue = {}
+        }
         
-        # Start node
-        dialogue["start"] = DialogueNode(
-            id="start",
-            text=f"{npc.get_greeting()}\n\nWhat brings you here?",
-            choices=[
-                DialogueChoice(text="Tell me about this place.", next_node="about"),
-                DialogueChoice(text="Do you have any work for me?", 
-                             action=DialogueAction.START_QUEST,
-                             condition={"has_quests": True}),
-                DialogueChoice(text="I should go.", next_node="end")
-            ]
-        )
-        
-        # About node
-        dialogue["about"] = DialogueNode(
-            id="about",
-            text="This place has a long history. Many adventurers have passed through here...",
-            choices=[
-                DialogueChoice(text="Interesting.", next_node="start"),
-                DialogueChoice(text="Goodbye.", next_node="end")
-            ]
-        )
-        
-        # End node
-        dialogue["end"] = DialogueNode(
-            id="end",
-            text="Farewell, traveler. May your journey be safe.",
-            choices=[]
-        )
-        
-        # Skill fail node
-        dialogue["skill_fail"] = DialogueNode(
-            id="skill_fail",
-            text="You don't seem skilled enough for that...",
-            choices=[
-                DialogueChoice(text="I see.", next_node="start")
-            ]
-        )
-        
-        return dialogue
+        for npc_id, npc in default_npcs.items():
+            self.npcs[npc_id] = npc
     
     def get_npc(self, npc_id: str) -> Optional[NPC]:
         """Get NPC by ID"""
@@ -441,49 +433,11 @@ class NPCManager:
     def register_npc(self, npc_data: Dict[str, Any]) -> bool:
         """Register a new NPC from plugin data"""
         try:
-            npc = NPC(
-                id=npc_data["id"],
-                name=npc_data["name"],
-                description=npc_data["description"],
-                npc_type=NPCType(npc_data.get("npc_type", "villager")),
-                location=npc_data.get("location", ""),
-                quest_giver=npc_data.get("quest_giver", False),
-                shop_id=npc_data.get("shop_id", ""),
-                shop_items=npc_data.get("shop_items", []),
-                buy_multiplier=npc_data.get("buy_multiplier", 1.0),
-                sell_multiplier=npc_data.get("sell_multiplier", 0.5),
-                services=npc_data.get("services", []),
-                can_train=npc_data.get("can_train", []),
-                training_cost=npc_data.get("training_cost", 100),
-                friendship_max=npc_data.get("friendship_max", 100)
-            )
-            
-            # Add dialogue tree
-            npc.dialogue_tree = self._create_basic_dialogue(npc)
-            
-            # Store custom data
-            npc.custom_data = {
-                "dialogue": npc_data.get("dialogue", {}),
-                "special_abilities": npc_data.get("special_abilities", {}),
-                "arena_levels": npc_data.get("arena_levels", []),
-                "prophecies": npc_data.get("prophecies", []),
-                "guide_services": npc_data.get("guide_services", {}),
-                "mining_jobs": npc_data.get("mining_jobs", []),
-                "blessing_types": npc_data.get("blessing_types", []),
-                "temple_trials": npc_data.get("temple_trials", []),
-                "dragon_preparation": npc_data.get("dragon_preparation", {}),
-                "fortune_prices": npc_data.get("fortune_prices", {}),
-                "wish_system": npc_data.get("wish_system", {}),
-                "class_advancement": npc_data.get("class_advancement", {}),
-                "friendship_rewards": npc_data.get("friendship_rewards", {})
-            }
-            
+            npc = NPC.from_dict(npc_data)
             self.npcs[npc.id] = npc
-            print(f"  [Extended NPCs] Registered: {npc.name}")
             return True
-            
         except Exception as e:
-            print(f"  [Extended NPCs] Error registering NPC {npc_data.get('id', 'unknown')}: {e}")
+            print(f"Error registering NPC {npc_data.get('id', 'unknown')}: {e}")
             return False
     
     def register_npcs(self, npcs_data: Dict[str, Dict[str, Any]]) -> int:

@@ -722,6 +722,11 @@ class Character(Entity):
         if not item:
             return False, f"Item '{item_name}' not found in inventory."
         
+        # Check if already equipped
+        for slot, equipped in self.equipment.slots.items():
+            if equipped and equipped.name.lower() == item_name.lower():
+                return False, f"{item.name} is already equipped."
+        
         if isinstance(item, Weapon):
             can_equip, msg = item.can_equip(self)
             if not can_equip:
@@ -796,8 +801,10 @@ class Character(Entity):
             if self.character_class in CLASS_ABILITIES:
                 for ability in CLASS_ABILITIES[self.character_class]:
                     if ability.level_required == self.level:
-                        self.abilities.append(ability)
-                        messages.append(f"Learned new ability: {ability.name}!")
+                        # Check if ability already learned
+                        if not any(a.name == ability.name for a in self.abilities):
+                            self.abilities.append(ability)
+                            messages.append(f"Learned new ability: {ability.name}!")
         
         return leveled_up, messages
     
@@ -1054,6 +1061,8 @@ class Inventory:
     
     def _item_to_dict(self, item: Item) -> Dict:
         """Convert item to dictionary"""
+        from core.items import Weapon, Armor, Consumable, Material
+        
         data = {
             "name": item.name,
             "item_type": item.item_type.value,
@@ -1064,17 +1073,56 @@ class Inventory:
             "description": item.description,
             "level_required": item.level_required
         }
+        
+        # Add type-specific data
+        if isinstance(item, Weapon):
+            data.update({
+                "damage_min": item.damage_min,
+                "damage_max": item.damage_max,
+                "damage_type": item.damage_type.value,
+                "attack_speed": item.attack_speed,
+                "critical_chance": item.critical_chance,
+                "critical_damage": item.critical_damage,
+                "two_handed": item.two_handed,
+                "stat_requirements": item.stat_requirements
+            })
+        elif isinstance(item, Armor):
+            data.update({
+                "slot": item.slot.value,
+                "defense": item.defense,
+                "magic_defense": item.magic_defense,
+                "resistances": item.resistances,
+                "stat_bonuses": item.stat_bonuses
+            })
+        elif isinstance(item, Consumable):
+            data.update({
+                "hp_restore": item.hp_restore,
+                "mp_restore": item.mp_restore,
+                "stamina_restore": item.stamina_restore,
+                "temporary_effects": item.temporary_effects,
+                "cooldown": item.cooldown,
+                "use_message": item.use_message
+            })
+        elif isinstance(item, Material):
+            data.update({
+                "material_type": item.material_type,
+                "quality": item.quality,
+                "crafting_value": item.crafting_value
+            })
+        
         return data
     
     @classmethod
     def from_dict(cls, data: Dict) -> 'Inventory':
+        from core.items import ItemFactory
+        
         inv = cls(
-            max_slots=data["max_slots"],
-            max_weight=data["max_weight"]
+            max_slots=data.get("max_slots", 50),
+            max_weight=data.get("max_weight", 100.0)
         )
-        inv.gold = data["gold"]
-        for item_data in data["items"]:
-            item = get_item(item_data["name"].lower().replace(" ", "_"), item_data.get("quantity", 1))
+        inv.gold = data.get("gold", 0)
+        for item_data in data.get("items", []):
+            item = ItemFactory.create_item(item_data)
             if item:
                 inv.items.append(item)
         return inv
@@ -1203,12 +1251,15 @@ class Equipment:
     def from_dict(cls, data: Dict) -> 'Equipment':
         from core.items import ItemFactory
         eq = cls()
-        for slot_name, item_data in data["slots"].items():
+        for slot_name, item_data in data.get("slots", {}).items():
             if item_data:
-                slot = EquipmentSlot(slot_name)
-                item = ItemFactory.create_item(item_data)
-                if isinstance(item, (Weapon, Armor)):
-                    eq.slots[slot] = item
+                try:
+                    slot = EquipmentSlot(slot_name)
+                    item = ItemFactory.create_item(item_data)
+                    if isinstance(item, (Weapon, Armor)):
+                        eq.slots[slot] = item
+                except (ValueError, KeyError):
+                    continue
         return eq
 
 

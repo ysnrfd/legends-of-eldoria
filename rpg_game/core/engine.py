@@ -125,186 +125,173 @@ class StatusEffectType(Enum):
     """Status effect types"""
     POISON = "poison"
     BURN = "burn"
-    FREEZE = "freeze"
-    STUN = "stun"
     BLEED = "bleed"
+    STUN = "stun"
+    SLOW = "slow"
+    HASTE = "haste"
     REGENERATION = "regeneration"
+    SHIELD = "shield"
     BLESSING = "blessing"
     CURSE = "curse"
-    HASTE = "haste"
-    SLOW = "slow"
+    FEAR = "fear"
+    CHARM = "charm"
+    INVISIBLE = "invisible"
     STRENGTH_BUFF = "strength_buff"
     DEFENSE_BUFF = "defense_buff"
-    INVISIBLE = "invisible"
-    SILENCE = "silence"
+    MAGIC_BUFF = "magic_buff"
     IMMOBILIZE = "immobilize"
-    CHARM = "charm"
-    FEAR = "fear"
-    BLIND = "blind"
-    REFLECT = "reflect"
-    SHIELD = "shield"
+    SILENCE = "silence"
+    CONFUSION = "confusion"
+
+
+class AbilityType(Enum):
+    """Ability types"""
+    ACTIVE = "active"
+    PASSIVE = "passive"
+    TOGGLE = "toggle"
+    ULTIMATE = "ultimate"
+
+
+class TargetType(Enum):
+    """Target types for abilities"""
+    SELF = "self"
+    SINGLE_ENEMY = "single_enemy"
+    ALL_ENEMIES = "all_enemies"
+    SINGLE_ALLY = "single_ally"
+    ALL_ALLIES = "all_allies"
+    AREA = "area"
+
+
+class EventType(Enum):
+    """Game event types"""
+    GAME_START = "game_start"
+    GAME_END = "game_end"
+    GAME_SAVE = "game_save"
+    GAME_LOAD = "game_load"
+    COMBAT_START = "combat_start"
+    COMBAT_END = "combat_end"
+    TURN_START = "turn_start"
+    TURN_END = "turn_end"
+    DAMAGE_DEALT = "damage_dealt"
+    DAMAGE_TAKEN = "damage_taken"
+    HEALING_RECEIVED = "healing_received"
+    ITEM_ACQUIRED = "item_acquired"
+    ITEM_USED = "item_used"
+    QUEST_STARTED = "quest_started"
+    QUEST_COMPLETED = "quest_completed"
+    QUEST_OBJECTIVE_UPDATED = "quest_objective_updated"
+    LEVEL_UP = "level_up"
+    DEATH = "death"
+    RESURRECTION = "resurrection"
+    LOCATION_ENTER = "location_enter"
+    LOCATION_LEAVE = "location_leave"
+    NPC_INTERACTION = "npc_interaction"
+    SHOP_OPEN = "shop_open"
+    CRAFTING_SUCCESS = "crafting_success"
+    CRAFTING_FAILURE = "crafting_failure"
+    PLUGIN_LOADED = "plugin_loaded"
+    PLUGIN_UNLOADED = "plugin_unloaded"
 
 
 class TimeOfDay(Enum):
     """Time of day"""
-    DAWN = "Dawn"
-    MORNING = "Morning"
-    NOON = "Noon"
-    AFTERNOON = "Afternoon"
-    DUSK = "Dusk"
-    EVENING = "Evening"
-    NIGHT = "Night"
-    MIDNIGHT = "Midnight"
+    DAWN = "dawn"
+    MORNING = "morning"
+    NOON = "noon"
+    AFTERNOON = "afternoon"
+    DUSK = "dusk"
+    NIGHT = "night"
+    MIDNIGHT = "midnight"
 
 
 class Weather(Enum):
     """Weather conditions"""
-    CLEAR = "Clear"
-    CLOUDY = "Cloudy"
-    RAIN = "Rain"
-    STORM = "Storm"
-    SNOW = "Snow"
-    FOG = "Fog"
-    SANDSTORM = "Sandstorm"
-    BLOOD_MOON = "Blood Moon"
-    AURORA = "Aurora"
+    CLEAR = "clear"
+    CLOUDY = "cloudy"
+    RAIN = "rain"
+    STORM = "storm"
+    SNOW = "snow"
+    FOG = "fog"
+    WINDY = "windy"
 
 
 class QuestStatus(Enum):
-    """Quest status states"""
-    LOCKED = "locked"
+    """Quest status"""
     AVAILABLE = "available"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
-
-
-class EventType(Enum):
-    """Game event types for plugin hooks"""
-    GAME_START = "game_start"
-    GAME_END = "game_end"
-    GAME_LOAD = "game_load"
-    GAME_SAVE = "game_save"
-    PLAYER_CREATE = "player_create"
-    PLAYER_LEVEL_UP = "player_level_up"
-    PLAYER_DEATH = "player_death"
-    PLAYER_RESPAWN = "player_respawn"
-    COMBAT_START = "combat_start"
-    COMBAT_END = "combat_end"
-    COMBAT_TURN = "combat_turn"
-    ENEMY_KILLED = "enemy_killed"
-    ITEM_PICKUP = "item_pickup"
-    ITEM_DROP = "item_drop"
-    ITEM_USE = "item_use"
-    ITEM_EQUIP = "item_equip"
-    ITEM_UNEQUIP = "item_unequip"
-    QUEST_START = "quest_start"
-    QUEST_COMPLETE = "quest_complete"
-    QUEST_FAIL = "quest_fail"
-    LOCATION_ENTER = "location_enter"
-    LOCATION_EXIT = "location_exit"
-    NPC_INTERACT = "npc_interact"
-    DIALOGUE_CHOICE = "dialogue_choice"
-    SHOP_OPEN = "shop_open"
-    SHOP_BUY = "shop_buy"
-    SHOP_SELL = "shop_sell"
-    CRAFT_SUCCESS = "craft_success"
-    CRAFT_FAIL = "craft_fail"
-    SKILL_USE = "skill_use"
-    SKILL_LEARN = "skill_learn"
-    SPELL_CAST = "spell_cast"
-    EFFECT_APPLY = "effect_apply"
-    EFFECT_REMOVE = "effect_remove"
-    TIME_CHANGE = "time_change"
-    WEATHER_CHANGE = "weather_change"
-    ACHIEVEMENT_UNLOCK = "achievement_unlock"
-    PLUGIN_LOAD = "plugin_load"
-    PLUGIN_UNLOAD = "plugin_unload"
-    CUSTOM = "custom"
+    TURNED_IN = "turned_in"
 
 
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
 
+def clamp(value: Union[int, float], min_val: Union[int, float], max_val: Union[int, float]) -> Union[int, float]:
+    """Clamp value between min and max"""
+    return max(min_val, min(value, max_val))
+
+
+def roll_dice(sides: int = 20, count: int = 1) -> int:
+    """Roll dice"""
+    return sum(random.randint(1, sides) for _ in range(count))
+
+
+def format_number(num: Union[int, float]) -> str:
+    """Format large numbers"""
+    if num >= 1_000_000:
+        return f"{num/1_000_000:.1f}M"
+    elif num >= 1_000:
+        return f"{num/1_000:.1f}k"
+    return str(int(num))
+
+
+def colored_text(text: str, color_code: str) -> str:
+    """Apply color to text"""
+    return f"{color_code}{text}\033[0m"
+
+
 def clear_screen():
     """Clear the terminal screen"""
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def colored_text(text: str, color: str) -> str:
-    """Return colored text for terminal"""
-    return f"{color}{text}\033[0m"
-
-
-def print_border(char: str = "=", length: int = 80):
+def print_border(width: int = 60, char: str = "="):
     """Print a border line"""
-    print(char * length)
-
-
-def print_boxed(text: str, char: str = "=", width: int = 80):
-    """Print text in a bordered box"""
-    lines = text.split('\n')
-    print(char * width)
-    for line in lines:
-        padding = width - len(line) - 2
-        left_pad = padding // 2
-        right_pad = padding - left_pad
-        print(f"{char}{' ' * left_pad}{line}{' ' * right_pad}{char}")
     print(char * width)
 
 
-def roll_dice(sides: int = 20, count: int = 1, modifier: int = 0) -> int:
-    """Roll dice and return result"""
-    total = sum(random.randint(1, sides) for _ in range(count)) + modifier
-    return total
+def print_boxed(text: str, width: int = 60):
+    """Print text in a box"""
+    print("=" * width)
+    print(f"  {text}")
+    print("=" * width)
 
 
-def clamp(value: int, min_val: int, max_val: int) -> int:
-    """Clamp value between min and max"""
-    return max(min_val, min(value, max_val))
-
-
-def format_number(num: int) -> str:
-    """Format number with commas"""
-    return f"{num:,}"
-
-
-def generate_id() -> str:
-    """Generate unique ID"""
-    return hashlib.md5(f"{time.time()}{random.random()}".encode()).hexdigest()[:12]
-
-
-def typewriter_effect(text: str, delay: float = 0.02):
-    """Print text with typewriter effect"""
-    for char in text:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    print()
-
-
-def get_input(prompt: str, valid_choices: Optional[List[str]] = None) -> str:
-    """Get user input with validation"""
+def get_input(prompt: str, valid_options: Optional[List[str]] = None) -> str:
+    """Get user input with optional validation"""
     while True:
         try:
             user_input = input(prompt).strip().lower()
-            if valid_choices is None or user_input in [c.lower() for c in valid_choices]:
+            if valid_options is None or user_input in valid_options:
                 return user_input
-            print(f"Invalid choice. Please enter one of: {', '.join(valid_choices)}")
-        except EOFError:
-            print("\nPlease enter a valid input.")
-        except KeyboardInterrupt:
-            print("\nOperation cancelled.")
+            print("Invalid option. Please try again.")
+        except (EOFError, KeyboardInterrupt):
             return ""
 
 
 def pause(message: str = "Press Enter to continue..."):
     """Pause for user input"""
-    try:
-        input(message)
-    except (EOFError, KeyboardInterrupt):
-        pass
+    input(message)
+
+
+def typewriter_effect(text: str, delay: float = 0.03):
+    """Print text with typewriter effect"""
+    for char in text:
+        print(char, end='', flush=True)
+        time.sleep(delay)
+    print()
 
 
 # =============================================================================
@@ -321,466 +308,146 @@ class Stats:
     wisdom: int = 10
     charisma: int = 10
     luck: int = 10
-
-    def __getitem__(self, stat_type: StatType) -> int:
-        return getattr(self, stat_type.value, 10)
-
-    def __setitem__(self, stat_type: StatType, value: int):
-        setattr(self, stat_type.value, clamp(value, 1, 100))
-
+    
     def get_modifier(self, stat_type: StatType) -> int:
-        """Get D&D style modifier for stat"""
-        return (self[stat_type] - 10) // 2
-
+        """Get ability modifier for a stat"""
+        value = getattr(self, stat_type.value, 10)
+        return (value - 10) // 2
+    
     def to_dict(self) -> Dict:
-        return asdict(self)
-
+        return {
+            "strength": self.strength,
+            "dexterity": self.dexterity,
+            "constitution": self.constitution,
+            "intelligence": self.intelligence,
+            "wisdom": self.wisdom,
+            "charisma": self.charisma,
+            "luck": self.luck
+        }
+    
     @classmethod
     def from_dict(cls, data: Dict) -> 'Stats':
-        return cls(**data)
+        return cls(
+            strength=data.get("strength", 10),
+            dexterity=data.get("dexterity", 10),
+            constitution=data.get("constitution", 10),
+            intelligence=data.get("intelligence", 10),
+            wisdom=data.get("wisdom", 10),
+            charisma=data.get("charisma", 10),
+            luck=data.get("luck", 10)
+        )
 
 
 @dataclass
 class Damage:
-    """Damage information"""
+    """Represents damage dealt"""
     amount: int
     damage_type: DamageType
     is_critical: bool = False
-    source: str = ""
-    bypass_resistance: bool = False
-
-
-@dataclass
-class HealInfo:
-    """Healing information"""
-    amount: int
-    source: str = ""
-    is_critical: bool = False
+    is_dodged: bool = False
+    is_blocked: bool = False
+    source: Optional[str] = None
+    
+    def apply(self, target: 'Entity') -> int:
+        """Apply damage to target"""
+        if self.is_dodged:
+            return 0
+        
+        actual_damage = self.amount
+        
+        if self.is_blocked:
+            actual_damage = actual_damage // 2
+        
+        # Apply resistances
+        resistance = target.resistances.get(self.damage_type, 0)
+        actual_damage = int(actual_damage * (1 - resistance))
+        
+        # Apply defense buff
+        if StatusEffectType.DEFENSE_BUFF in target.status_effects:
+            buff_data = target.status_effects[StatusEffectType.DEFENSE_BUFF]
+            buff_value = buff_data.get("value", 0)
+            actual_damage = max(1, actual_damage - buff_value)
+        
+        target.current_hp -= actual_damage
+        if target.current_hp <= 0:
+            target.is_alive = False
+        
+        return actual_damage
 
 
 @dataclass
 class CombatLog:
-    """Combat log entry"""
+    """Log entry for combat"""
     turn: int
     actor: str
     action: str
-    result: str
-    timestamp: float = field(default_factory=time.time)
+    target: Optional[str] = None
+    damage: int = 0
+    healing: int = 0
+    effects_applied: List[str] = field(default_factory=list)
+    message: str = ""
 
 
-# =============================================================================
-# BASE CLASSES
-# =============================================================================
-
-class GameObject(ABC):
+@dataclass
+class GameObject:
     """Base class for all game objects"""
+    id: str = field(default_factory=lambda: hashlib.md5(str(time.time()).encode()).hexdigest()[:8])
+    name: str = "Unknown"
+    description: str = ""
+    created_at: float = field(default_factory=time.time)
+    
+    def examine(self) -> str:
+        """Get detailed description"""
+        return f"{self.name}\n{'='*40}\n{self.description}"
 
-    _id_counter: ClassVar[int] = 0
 
-    def __init__(self, name: str, description: str = ""):
-        self.id = self._generate_id()
-        self.name = name
-        self.description = description
-        self.tags: Set[str] = set()
-        self.custom_data: Dict[str, Any] = {}
-
-    @classmethod
-    def _generate_id(cls) -> str:
-        cls._id_counter += 1
-        return f"{cls.__name__}_{cls._id_counter}_{random.randint(1000, 9999)}"
-
-    def add_tag(self, tag: str):
-        self.tags.add(tag.lower())
-
-    def remove_tag(self, tag: str):
-        self.tags.discard(tag.lower())
-
-    def has_tag(self, tag: str) -> bool:
-        return tag.lower() in self.tags
-
-    def set_data(self, key: str, value: Any):
-        self.custom_data[key] = value
-
-    def get_data(self, key: str, default: Any = None) -> Any:
-        return self.custom_data.get(key, default)
-
-    @abstractmethod
+@dataclass
+class Item(GameObject):
+    """Base item class"""
+    item_type: ItemType = ItemType.MATERIAL
+    rarity: Rarity = Rarity.COMMON
+    value: int = 0
+    weight: float = 0.0
+    quantity: int = 1
+    max_stack: int = 99
+    stackable: bool = True
+    level_required: int = 1
+    usable: bool = False
+    equippable: bool = False
+    
+    def __post_init__(self):
+        if not self.id:
+            self.id = hashlib.md5(f"{self.name}{time.time()}".encode()).hexdigest()[:8]
+    
+    def get_value(self) -> int:
+        """Get total value including quantity"""
+        return self.value * self.quantity
+    
+    def get_weight(self) -> float:
+        """Get total weight including quantity"""
+        return self.weight * self.quantity
+    
     def to_dict(self) -> Dict:
         return {
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "tags": list(self.tags),
-            "custom_data": self.custom_data
-        }
-
-    @classmethod
-    @abstractmethod
-    def from_dict(cls, data: Dict) -> 'GameObject':
-        pass
-
-
-class Entity(GameObject):
-    """Base class for all entities (characters, enemies, NPCs)"""
-
-    def __init__(
-        self,
-        name: str,
-        level: int = 1,
-        description: str = "",
-        stats: Optional[Stats] = None
-    ):
-        super().__init__(name, description)
-        self.level = level
-        self.stats = stats or Stats()
-        self.max_hp = self._calculate_max_hp()
-        self.current_hp = self.max_hp
-        self.max_mp = self._calculate_max_mp()
-        self.current_mp = self.max_mp
-        self.max_stamina = self._calculate_max_stamina()
-        self.current_stamina = self.max_stamina
-        self.experience = 0
-        self.experience_to_level = self._calculate_exp_to_level()
-        self.status_effects: Dict[StatusEffectType, Dict] = {}
-        self.is_alive = True
-        self.resistances: Dict[DamageType, float] = {dt: 0.0 for dt in DamageType}
-        self.abilities: List['Ability'] = []
-        self.position: Optional[str] = None
-        self.faction: str = "neutral"
-        self.hostility_range: int = 5
-
-    def _calculate_max_hp(self) -> int:
-        base = 100
-        per_level = 20
-        con_bonus = self.stats.get_modifier(StatType.CONSTITUTION) * 10
-        return base + (self.level * per_level) + con_bonus
-
-    def _calculate_max_mp(self) -> int:
-        base = 50
-        per_level = 10
-        int_bonus = self.stats.get_modifier(StatType.INTELLIGENCE) * 5
-        return base + (self.level * per_level) + int_bonus
-
-    def _calculate_max_stamina(self) -> int:
-        base = 100
-        per_level = 5
-        dex_bonus = self.stats.get_modifier(StatType.DEXTERITY) * 5
-        con_bonus = self.stats.get_modifier(StatType.CONSTITUTION) * 3
-        return base + (self.level * per_level) + dex_bonus + con_bonus
-
-    def _calculate_exp_to_level(self) -> int:
-        return int(100 * (1.5 ** (self.level - 1)))
-
-    def take_damage(self, damage: Damage) -> int:
-        """Apply damage to entity"""
-        if damage.bypass_resistance:
-            actual_damage = damage.amount
-        else:
-            resistance = self.resistances.get(damage.damage_type, 0)
-            actual_damage = max(1, int(damage.amount * (1 - resistance)))
-
-        self.current_hp = max(0, self.current_hp - actual_damage)
-
-        if self.current_hp <= 0:
-            self.is_alive = False
-
-        return actual_damage
-
-    def heal(self, amount: int) -> int:
-        """Heal the entity"""
-        old_hp = self.current_hp
-        self.current_hp = min(self.max_hp, self.current_hp + amount)
-        return self.current_hp - old_hp
-
-    def restore_mp(self, amount: int) -> int:
-        """Restore mana"""
-        old_mp = self.current_mp
-        self.current_mp = min(self.max_mp, self.current_mp + amount)
-        return self.current_mp - old_mp
-
-    def restore_stamina(self, amount: int) -> int:
-        """Restore stamina"""
-        old_stamina = self.current_stamina
-        self.current_stamina = min(self.max_stamina, self.current_stamina + amount)
-        return self.current_stamina - old_stamina
-
-    def apply_status_effect(self, effect_type: StatusEffectType, duration: int, strength: int = 1):
-        """Apply a status effect"""
-        self.status_effects[effect_type] = {
-            "duration": duration,
-            "strength": strength,
-            "turns_remaining": duration
-        }
-
-    def remove_status_effect(self, effect_type: StatusEffectType):
-        """Remove a status effect"""
-        self.status_effects.pop(effect_type, None)
-
-    def has_status_effect(self, effect_type: StatusEffectType) -> bool:
-        """Check if entity has a status effect"""
-        return effect_type in self.status_effects
-
-    def process_status_effects(self) -> List[str]:
-        """Process status effects and return messages"""
-        messages = []
-
-        for effect_type, data in list(self.status_effects.items()):
-            strength = data["strength"]
-
-            if effect_type == StatusEffectType.POISON:
-                damage = strength * 5
-                self.take_damage(Damage(damage, DamageType.POISON))
-                messages.append(f"Poison deals {damage} damage!")
-
-            elif effect_type == StatusEffectType.BURN:
-                damage = strength * 8
-                self.take_damage(Damage(damage, DamageType.FIRE))
-                messages.append(f"Burn deals {damage} damage!")
-
-            elif effect_type == StatusEffectType.REGENERATION:
-                heal = strength * 10
-                self.heal(heal)
-                messages.append(f"Regeneration heals {heal} HP!")
-
-            elif effect_type == StatusEffectType.BLEED:
-                damage = strength * 3
-                self.take_damage(Damage(damage, DamageType.PHYSICAL))
-                messages.append(f"Bleeding deals {damage} damage!")
-
-            data["turns_remaining"] -= 1
-            if data["turns_remaining"] <= 0:
-                del self.status_effects[effect_type]
-                messages.append(f"{effect_type.value.title()} has worn off.")
-
-        return messages
-
-    def get_stat(self, stat_type: StatType) -> int:
-        """Get stat value including bonuses"""
-        base = self.stats[stat_type]
-
-        for effect_type, data in self.status_effects.items():
-            if effect_type == StatusEffectType.STRENGTH_BUFF and stat_type == StatType.STRENGTH:
-                base += data["strength"] * 5
-
-        return base
-
-    def get_accuracy(self) -> int:
-        """Calculate accuracy"""
-        base = 75
-        dex_bonus = self.stats.get_modifier(StatType.DEXTERITY) * 2
-        luck_bonus = self.stats.get_modifier(StatType.LUCK)
-        return base + dex_bonus + luck_bonus
-
-    def get_evasion(self) -> int:
-        """Calculate evasion chance"""
-        base = 10
-        dex_bonus = self.stats.get_modifier(StatType.DEXTERITY) * 2
-        return base + dex_bonus
-
-    def get_critical_chance(self) -> float:
-        """Calculate critical hit chance"""
-        base = 5.0
-        luck_bonus = self.stats.get_modifier(StatType.LUCK) * 0.5
-        return base + luck_bonus
-
-    def get_critical_damage(self) -> float:
-        """Calculate critical damage multiplier"""
-        return 2.0 + (self.stats.get_modifier(StatType.LUCK) * 0.1)
-
-    def level_up(self) -> bool:
-        """Level up if enough experience"""
-        if self.experience >= self.experience_to_level:
-            self.experience -= self.experience_to_level
-            self.level += 1
-            self.experience_to_level = self._calculate_exp_to_level()
-
-            old_max_hp = self.max_hp
-            old_max_mp = self.max_mp
-            old_max_stamina = self.max_stamina
-
-            self.max_hp = self._calculate_max_hp()
-            self.max_mp = self._calculate_max_mp()
-            self.max_stamina = self._calculate_max_stamina()
-
-            self.current_hp += self.max_hp - old_max_hp
-            self.current_mp += self.max_mp - old_max_mp
-            self.current_stamina += self.max_stamina - old_max_stamina
-
-            return True
-        return False
-
-    def get_attack_power(self) -> int:
-        """Calculate physical attack power"""
-        return 10 + self.level * 2 + self.stats.get_modifier(StatType.STRENGTH) * 3
-
-    def get_magic_power(self) -> int:
-        """Calculate magic attack power"""
-        return 10 + self.level * 2 + self.stats.get_modifier(StatType.INTELLIGENCE) * 3
-
-    def get_defense(self) -> int:
-        """Calculate physical defense"""
-        return 5 + self.level + self.stats.get_modifier(StatType.CONSTITUTION) * 2
-
-    def get_magic_defense(self) -> int:
-        """Calculate magic defense"""
-        return 5 + self.level + self.stats.get_modifier(StatType.WISDOM) * 2
-
-    def to_dict(self) -> Dict:
-        data = super().to_dict()
-        data.update({
-            "level": self.level,
-            "stats": self.stats.to_dict(),
-            "max_hp": self.max_hp,
-            "current_hp": self.current_hp,
-            "max_mp": self.max_mp,
-            "current_mp": self.current_mp,
-            "max_stamina": self.max_stamina,
-            "current_stamina": self.current_stamina,
-            "experience": self.experience,
-            "experience_to_level": self.experience_to_level,
-            "status_effects": {k.value: v for k, v in self.status_effects.items()},
-            "is_alive": self.is_alive,
-            "resistances": {k.value: v for k, v in self.resistances.items()},
-            "position": self.position,
-            "faction": self.faction,
-            "hostility_range": self.hostility_range
-        })
-        return data
-
-    @classmethod
-    def from_dict(cls, data: Dict) -> 'Entity':
-        entity = cls(
-            name=data["name"],
-            level=data["level"],
-            description=data["description"]
-        )
-        entity.id = data["id"]
-        entity.stats = Stats.from_dict(data["stats"])
-        entity.max_hp = data["max_hp"]
-        entity.current_hp = data["current_hp"]
-        entity.max_mp = data["max_mp"]
-        entity.current_mp = data["current_mp"]
-        entity.max_stamina = data["max_stamina"]
-        entity.current_stamina = data["current_stamina"]
-        entity.experience = data["experience"]
-        entity.experience_to_level = data["experience_to_level"]
-        entity.status_effects = {
-            StatusEffectType(k): v for k, v in data.get("status_effects", {}).items()
-        }
-        entity.is_alive = data["is_alive"]
-        entity.resistances = {
-            DamageType(k): v for k, v in data.get("resistances", {}).items()
-        }
-        entity.position = data.get("position")
-        entity.faction = data.get("faction", "neutral")
-        entity.hostility_range = data.get("hostility_range", 5)
-        entity.tags = set(data.get("tags", []))
-        entity.custom_data = data.get("custom_data", {})
-        return entity
-
-
-# =============================================================================
-# ITEM BASE CLASS
-# =============================================================================
-
-@dataclass
-class Item(GameObject):
-    """Base item class"""
-    name: str = ""
-    item_type: ItemType = ItemType.MATERIAL
-    rarity: Rarity = Rarity.COMMON
-    value: int = 1
-    weight: float = 0.1
-    stackable: bool = False
-    max_stack: int = 99
-    quantity: int = 1
-    description: str = ""
-    level_required: int = 1
-    effects: List[Tuple[str, Any]] = field(default_factory=list)
-
-    def __post_init__(self):
-        super().__init__(self.name, self.description)
-
-    def use(self, user: Entity) -> Tuple[bool, str]:
-        """Use the item"""
-        return False, "This item cannot be used."
-
-    def get_display_name(self) -> str:
-        """Get colored display name"""
-        return f"{self.rarity.color}[{self.rarity.display_name}] {self.name}\033[0m"
-
-    def examine(self) -> str:
-        """Get detailed item description"""
-        lines = [
-            self.get_display_name(),
-            f"Type: {self.item_type.value.title()}",
-            f"Value: {value:,} gold" if (value := self.value) else "Value: 1 gold",
-            f"Weight: {self.weight:.1f} kg",
-            f"",
-            f"{self.description}"
-        ]
-        if self.level_required > 1:
-            lines.append(f"Required Level: {self.level_required}")
-        return "\n".join(lines)
-
-    def to_dict(self) -> Dict:
-        data = super().to_dict()
-        data.update({
-            "name": self.name,
             "item_type": self.item_type.value,
             "rarity": self.rarity.value,
             "value": self.value,
             "weight": self.weight,
-            "stackable": self.stackable,
-            "max_stack": self.max_stack,
             "quantity": self.quantity,
-            "description": self.description,
+            "max_stack": self.max_stack,
+            "stackable": self.stackable,
             "level_required": self.level_required,
-            "effects": self.effects
-        })
-        return data
-
-    @classmethod
-    def from_dict(cls, data: Dict) -> 'Item':
-        return cls(
-            name=data["name"],
-            item_type=ItemType(data["item_type"]),
-            rarity=Rarity(data["rarity"]),
-            value=data["value"],
-            weight=data["weight"],
-            stackable=data["stackable"],
-            max_stack=data["max_stack"],
-            quantity=data["quantity"],
-            description=data["description"],
-            level_required=data.get("level_required", 1),
-            effects=data.get("effects", [])
-        )
-
-
-# =============================================================================
-# ABILITY SYSTEM
-# =============================================================================
-
-class AbilityType(Enum):
-    ACTIVE = "active"
-    PASSIVE = "passive"
-    TOGGLE = "toggle"
-
-
-class TargetType(Enum):
-    SELF = "self"
-    SINGLE_ENEMY = "single_enemy"
-    ALL_ENEMIES = "all_enemies"
-    SINGLE_ALLY = "single_ally"
-    ALL_ALLIES = "all_allies"
-    AREA = "area"
-    GROUND = "ground"
-    ANY = "any"
+            "usable": self.usable,
+            "equippable": self.equippable
+        }
 
 
 @dataclass
 class Ability:
-    """Represents an ability or spell"""
+    """Character ability/skill"""
     name: str
     description: str
     ability_type: AbilityType
@@ -793,93 +460,103 @@ class Ability:
     damage: int = 0
     damage_type: Optional[DamageType] = None
     healing: int = 0
-    effects: List[Tuple[StatusEffectType, int, int]] = field(default_factory=list)
+    effects: List[Tuple[StatusEffectType, int, int]] = field(default_factory=list)  # (type, duration, strength)
     level_required: int = 1
     class_required: Optional[CharacterClass] = None
     range: int = 1
     accuracy_modifier: int = 0
     critical_modifier: float = 0.0
     requirements: Dict[str, Any] = field(default_factory=dict)
-
-    def can_use(self, caster: Entity) -> Tuple[bool, str]:
+    
+    def can_use(self, user: 'Entity') -> Tuple[bool, str]:
         """Check if ability can be used"""
         if self.current_cooldown > 0:
-            return False, f"Ability on cooldown: {self.current_cooldown} turns remaining"
-
-        if caster.current_mp < self.mp_cost:
-            return False, f"Not enough MP (need {self.mp_cost}, have {caster.current_mp})"
-
-        if caster.current_stamina < self.stamina_cost:
-            return False, f"Not enough stamina (need {self.stamina_cost}, have {caster.current_stamina})"
-
-        if caster.current_hp <= self.hp_cost:
-            return False, f"Not enough HP for sacrifice"
-
-        if caster.level < self.level_required:
-            return False, f"Required level: {self.level_required}"
-
+            return False, f"On cooldown ({self.current_cooldown} turns remaining)"
+        
+        if user.current_mp < self.mp_cost:
+            return False, f"Not enough MP (need {self.mp_cost})"
+        
+        if user.current_stamina < self.stamina_cost:
+            return False, f"Not enough stamina (need {self.stamina_cost})"
+        
+        if user.current_hp <= self.hp_cost:
+            return False, f"Not enough HP (need {self.hp_cost})"
+        
+        if user.level < self.level_required:
+            return False, f"Requires level {self.level_required}"
+        
+        if self.class_required and hasattr(user, 'character_class'):
+            if user.character_class != self.class_required:
+                return False, f"Requires {self.class_required.value} class"
+        
         return True, "Can use"
-
-    def use(self, caster: Entity, target: Entity) -> Dict[str, Any]:
-        """Use the ability on a target"""
+    
+    def use(self, user: 'Entity', target: Optional['Entity'] = None) -> Dict[str, Any]:
+        """Use the ability"""
+        can_use, msg = self.can_use(user)
+        if not can_use:
+            return {"success": False, "message": msg}
+        
+        # Pay costs
+        user.current_mp -= self.mp_cost
+        user.current_stamina -= self.stamina_cost
+        user.current_hp -= self.hp_cost
+        self.current_cooldown = self.cooldown
+        
         result = {
-            "success": False,
-            "damage": 0,
-            "healing": 0,
+            "success": True,
+            "message": f"{user.name} uses {self.name}!",
+            "damage_dealt": 0,
+            "healing_done": 0,
             "effects_applied": [],
             "messages": []
         }
-
-        can_use, message = self.can_use(caster)
-        if not can_use:
-            result["messages"].append(message)
-            return result
-
-        # Apply costs
-        caster.current_mp -= self.mp_cost
-        caster.current_stamina -= self.stamina_cost
-        caster.current_hp -= self.hp_cost
-
-        result["success"] = True
-        self.current_cooldown = self.cooldown
-
-        # Calculate damage
-        if self.damage > 0:
-            is_critical = random.random() < (caster.get_critical_chance() + self.critical_modifier)
-            damage_mult = caster.get_critical_damage() if is_critical else 1.0
-
-            base_damage = self.damage + caster.get_magic_power() if self.damage_type != DamageType.PHYSICAL else self.damage + caster.get_attack_power()
-            total_damage = int(base_damage * damage_mult)
-
-            if self.damage_type:
-                actual_damage = target.take_damage(Damage(
-                    total_damage,
-                    self.damage_type,
-                    is_critical
-                ))
-                result["damage"] = actual_damage
-                crit_text = " CRITICAL!" if is_critical else ""
-                result["messages"].append(f"{caster.name}'s {self.name} deals {actual_damage} {self.damage_type.value} damage to {target.name}!{crit_text}")
-
+        
+        # Apply damage
+        if self.damage > 0 and target:
+            is_critical = random.random() < (user.get_critical_chance() + self.critical_modifier)
+            damage_amount = self.damage
+            
+            if is_critical:
+                damage_amount = int(damage_amount * 1.5)
+            
+            damage = Damage(
+                amount=damage_amount,
+                damage_type=self.damage_type or DamageType.PHYSICAL,
+                is_critical=is_critical,
+                source=self.name
+            )
+            
+            actual_damage = damage.apply(target)
+            result["damage_dealt"] = actual_damage
+            result["messages"].append(f"Dealt {actual_damage} damage!")
+            
+            if is_critical:
+                result["messages"].append("Critical hit!")
+        
         # Apply healing
         if self.healing > 0:
-            heal_amount = target.heal(self.healing + caster.get_magic_power() // 2)
-            result["healing"] = heal_amount
-            result["messages"].append(f"{self.name} heals {target.name} for {heal_amount} HP!")
-
-        # Apply status effects
+            heal_amount = self.healing
+            user.heal(heal_amount)
+            result["healing_done"] = heal_amount
+            result["messages"].append(f"Healed for {heal_amount} HP!")
+        
+        # Apply effects
         for effect_type, duration, strength in self.effects:
-            target.apply_status_effect(effect_type, duration, strength)
+            if target:
+                target.apply_status_effect(effect_type, duration, strength)
+            else:
+                user.apply_status_effect(effect_type, duration, strength)
             result["effects_applied"].append(effect_type.value)
-            result["messages"].append(f"{target.name} is afflicted with {effect_type.value}!")
-
+            result["messages"].append(f"{target.name if target else user.name} is afflicted with {effect_type.value}!")
+        
         return result
-
+    
     def end_turn(self):
         """Reduce cooldown at end of turn"""
         if self.current_cooldown > 0:
             self.current_cooldown -= 1
-
+    
     def to_dict(self) -> Dict:
         return {
             "name": self.name,
@@ -902,7 +579,7 @@ class Ability:
             "critical_modifier": self.critical_modifier,
             "requirements": self.requirements
         }
-
+    
     @classmethod
     def from_dict(cls, data: Dict) -> 'Ability':
         return cls(
@@ -926,6 +603,231 @@ class Ability:
             critical_modifier=data.get("critical_modifier", 0.0),
             requirements=data.get("requirements", {})
         )
+
+
+class Entity(GameObject):
+    """Base entity class for characters and enemies"""
+    
+    def __init__(
+        self,
+        name: str,
+        level: int = 1,
+        description: str = "",
+        stats: Optional[Stats] = None
+    ):
+        super().__init__(name=name, description=description)
+        self.level = level
+        self.stats = stats or Stats()
+        
+        # Combat stats
+        self.max_hp = self._calculate_max_hp()
+        self.current_hp = self.max_hp
+        self.max_mp = self._calculate_max_mp()
+        self.current_mp = self.max_mp
+        self.max_stamina = self._calculate_max_stamina()
+        self.current_stamina = self.max_stamina
+        
+        # Experience
+        self.experience = 0
+        self.experience_to_level = self._calculate_exp_to_level()
+        
+        # Status
+        self.is_alive = True
+        self.status_effects: Dict[StatusEffectType, Dict[str, Any]] = {}
+        self.abilities: List[Ability] = []
+        
+        # Resistances
+        self.resistances: Dict[DamageType, float] = {
+            DamageType.PHYSICAL: 0.0,
+            DamageType.MAGICAL: 0.0,
+            DamageType.FIRE: 0.0,
+            DamageType.ICE: 0.0,
+            DamageType.LIGHTNING: 0.0,
+            DamageType.POISON: 0.0,
+            DamageType.HOLY: 0.0,
+            DamageType.DARK: 0.0,
+            DamageType.TRUE: 0.0
+        }
+        
+        # Position
+        self.position: Optional[str] = None
+        self.faction: str = "neutral"
+    
+    def _calculate_max_hp(self) -> int:
+        """Calculate maximum HP"""
+        con_mod = self.stats.get_modifier(StatType.CONSTITUTION)
+        return 50 + (self.level * 10) + (con_mod * 5)
+    
+    def _calculate_max_mp(self) -> int:
+        """Calculate maximum MP"""
+        int_mod = self.stats.get_modifier(StatType.INTELLIGENCE)
+        wis_mod = self.stats.get_modifier(StatType.WISDOM)
+        return 20 + (self.level * 5) + (int_mod * 3) + (wis_mod * 2)
+    
+    def _calculate_max_stamina(self) -> int:
+        """Calculate maximum stamina"""
+        con_mod = self.stats.get_modifier(StatType.CONSTITUTION)
+        str_mod = self.stats.get_modifier(StatType.STRENGTH)
+        return 30 + (self.level * 5) + (con_mod * 2) + (str_mod * 2)
+    
+    def _calculate_exp_to_level(self) -> int:
+        """Calculate experience needed for next level"""
+        return int(100 * (1.5 ** (self.level - 1)))
+    
+    def get_stat(self, stat_type: StatType) -> int:
+        """Get stat value"""
+        return getattr(self.stats, stat_type.value, 10)
+    
+    def get_attack_power(self) -> int:
+        """Calculate attack power"""
+        str_mod = self.stats.get_modifier(StatType.STRENGTH)
+        return 10 + (self.level * 2) + (str_mod * 2)
+    
+    def get_defense(self) -> int:
+        """Calculate defense"""
+        con_mod = self.stats.get_modifier(StatType.CONSTITUTION)
+        return 5 + (self.level) + con_mod
+    
+    def get_magic_power(self) -> int:
+        """Calculate magic power"""
+        int_mod = self.stats.get_modifier(StatType.INTELLIGENCE)
+        return 10 + (self.level * 2) + (int_mod * 3)
+    
+    def get_accuracy(self) -> int:
+        """Calculate accuracy percentage"""
+        dex_mod = self.stats.get_modifier(StatType.DEXTERITY)
+        return clamp(50 + (self.level * 2) + (dex_mod * 2), 5, 95)
+    
+    def get_evasion(self) -> int:
+        """Calculate evasion percentage"""
+        dex_mod = self.stats.get_modifier(StatType.DEXTERITY)
+        return clamp(5 + (self.level) + dex_mod, 0, 50)
+    
+    def get_critical_chance(self) -> float:
+        """Calculate critical hit chance"""
+        luck_mod = self.stats.get_modifier(StatType.LUCK)
+        return clamp(0.05 + (luck_mod * 0.01), 0.0, 0.5)
+    
+    def get_resistances(self) -> Dict[DamageType, float]:
+        """Get damage resistances"""
+        return self.resistances.copy()
+    
+    def heal(self, amount: int):
+        """Heal the entity"""
+        self.current_hp = min(self.max_hp, self.current_hp + amount)
+    
+    def restore_mp(self, amount: int):
+        """Restore MP"""
+        self.current_mp = min(self.max_mp, self.current_mp + amount)
+    
+    def restore_stamina(self, amount: int):
+        """Restore stamina"""
+        self.current_stamina = min(self.max_stamina, self.current_stamina + amount)
+    
+    def take_damage(self, damage: Damage) -> int:
+        """Take damage"""
+        return damage.apply(self)
+    
+    def apply_status_effect(self, effect_type: StatusEffectType, duration: int, strength: int = 1):
+        """Apply a status effect"""
+        self.status_effects[effect_type] = {
+            "turns_remaining": duration,
+            "strength": strength,
+            "applied_at": time.time()
+        }
+    
+    def remove_status_effect(self, effect_type: StatusEffectType):
+        """Remove a status effect"""
+        if effect_type in self.status_effects:
+            del self.status_effects[effect_type]
+    
+    def process_status_effects(self) -> List[str]:
+        """Process active status effects at turn end"""
+        messages = []
+        effects_to_remove = []
+        
+        for effect_type, data in self.status_effects.items():
+            # Apply effect
+            if effect_type == StatusEffectType.POISON:
+                damage = data["strength"] * 5
+                self.current_hp -= damage
+                messages.append(f"{self.name} takes {damage} poison damage!")
+            
+            elif effect_type == StatusEffectType.BURN:
+                damage = data["strength"] * 3
+                self.current_hp -= damage
+                messages.append(f"{self.name} takes {damage} burn damage!")
+            
+            elif effect_type == StatusEffectType.BLEED:
+                damage = data["strength"] * 4
+                self.current_hp -= damage
+                messages.append(f"{self.name} takes {damage} bleed damage!")
+            
+            elif effect_type == StatusEffectType.REGENERATION:
+                healing = data["strength"] * 5
+                self.heal(healing)
+                messages.append(f"{self.name} regenerates {healing} HP!")
+            
+            # Decrement duration
+            data["turns_remaining"] -= 1
+            if data["turns_remaining"] <= 0:
+                effects_to_remove.append(effect_type)
+                messages.append(f"{effect_type.value.title()} wore off!")
+        
+        # Remove expired effects
+        for effect in effects_to_remove:
+            del self.status_effects[effect]
+        
+        # Check death
+        if self.current_hp <= 0:
+            self.is_alive = False
+            messages.append(f"{self.name} has fallen!")
+        
+        return messages
+    
+    def level_up(self) -> bool:
+        """Attempt to level up"""
+        if self.experience >= self.experience_to_level:
+            self.level += 1
+            self.experience -= self.experience_to_level
+            self.experience_to_level = self._calculate_exp_to_level()
+            
+            # Increase stats
+            self.max_hp = self._calculate_max_hp()
+            self.max_mp = self._calculate_max_mp()
+            self.max_stamina = self._calculate_max_stamina()
+            
+            # Restore resources
+            self.current_hp = self.max_hp
+            self.current_mp = self.max_mp
+            self.current_stamina = self.max_stamina
+            
+            return True
+        return False
+    
+    def to_dict(self) -> Dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "level": self.level,
+            "stats": self.stats.to_dict(),
+            "max_hp": self.max_hp,
+            "current_hp": self.current_hp,
+            "max_mp": self.max_mp,
+            "current_mp": self.current_mp,
+            "max_stamina": self.max_stamina,
+            "current_stamina": self.current_stamina,
+            "experience": self.experience,
+            "experience_to_level": self.experience_to_level,
+            "is_alive": self.is_alive,
+            "status_effects": {
+                k.value: v for k, v in self.status_effects.items()
+            },
+            "resistances": {k.value: v for k, v in self.resistances.items()},
+            "position": self.position,
+            "faction": self.faction
+        }
 
 
 print("Core engine module loaded successfully!")
