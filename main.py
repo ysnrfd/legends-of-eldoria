@@ -28,7 +28,7 @@ import time
 import random
 
 # Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rpg_game'))
 
 from core.engine import (
     clear_screen, colored_text, print_border, print_boxed,
@@ -207,16 +207,16 @@ class Game:
         
         # Basic weapon based on class
         starting_weapons = {
-            CharacterClass.WARRIOR: "rusty_sword",
-            CharacterClass.MAGE: "rusty_sword",
-            CharacterClass.ROGUE: "rusty_sword",
-            CharacterClass.RANGER: "rusty_sword",
-            CharacterClass.PALADIN: "rusty_sword",
-            CharacterClass.NECROMANCER: "rusty_sword",
-            CharacterClass.MONK: "rusty_sword",
-            CharacterClass.BARD: "rusty_sword",
-            CharacterClass.DRUID: "rusty_sword",
-            CharacterClass.WARLOCK: "rusty_sword"
+            CharacterClass.WARRIOR: "iron_sword",
+            CharacterClass.MAGE: "frost_staff",
+            CharacterClass.ROGUE: "shadow_dagger",
+            CharacterClass.RANGER: "iron_sword",
+            CharacterClass.PALADIN: "iron_sword",
+            CharacterClass.NECROMANCER: "frost_staff",
+            CharacterClass.MONK: "iron_sword",
+            CharacterClass.BARD: "iron_sword",
+            CharacterClass.DRUID: "frost_staff",
+            CharacterClass.WARLOCK: "frost_staff"
         }
         
         weapon_id = starting_weapons.get(self.player.character_class, "rusty_sword")
@@ -834,7 +834,7 @@ class Game:
         """Handle dialogue action"""
         if action.value == "start_quest":
             # Start available quest
-            available = self.quest_manager.get_available_quests()
+            available = self.quest_manager.get_available_quests(self.world.current_location)
             quest_found = False
             for quest in available:
                 if quest.giver == npc.id:
@@ -855,13 +855,14 @@ class Game:
                     print(f"\n{npc.name} has no work for you at the moment.")
         
         elif action.value == "give_item":
-            item = get_item(data.get("item_id"))
+            item_id = data.get("item_id") if isinstance(data, dict) else data
+            item = get_item(item_id)
             if item:
                 self.player.inventory.add_item(item)
                 print(f"\nReceived: {item.name}")
         
         elif action.value == "give_gold":
-            amount = data.get("amount", 0)
+            amount = data.get("amount", 0) if isinstance(data, dict) else data
             self.player.add_gold(amount)
             print(f"\nReceived: {amount} gold")
     
