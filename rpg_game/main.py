@@ -809,26 +809,56 @@ class Game:
     
     def npc_dialogue(self, npc):
         """Handle NPC dialogue"""
-        node = npc.get_dialogue()
-        if node:
+        while True:
+            node = npc.get_dialogue()
+            if not node:
+                break
+            
             print(f"\n{npc.name}: {node.text}")
             
-            if node.choices:
-                for i, choice in enumerate(node.choices, 1):
-                    print(f"  [{i}] {choice.text}")
-                
-                selection = input("\nChoose response: ").strip()
-                try:
-                    idx = int(selection) - 1
-                    if 0 <= idx < len(node.choices):
-                        action, data = npc.advance_dialogue(idx, self.player, self.quest_manager)
-                        if "message" in data:
-                            print(f"\n{data['message']}")
-                        else:
-                            self.handle_dialogue_action(npc, action, data)
+            if not node.choices:
+                pause("\nPress Enter to continue...")
+                break
+            
+            for i, choice in enumerate(node.choices, 1):
+                print(f"  [{i}] {choice.text}")
+            
+            selection = input("\nChoose response: ").strip()
+            try:
+                idx = int(selection) - 1
+                if 0 <= idx < len(node.choices):
+                    choice = node.choices[idx]
+                    action, data = npc.advance_dialogue(idx, self.player, self.quest_manager)
+                    
+                    if "message" in data:
+                        print(f"\n{data['message']}")
                         pause("\nPress Enter to continue...")
-                except ValueError:
-                    pass
+                    
+                    # Handle actions that should exit dialogue
+                    if action.value == "open_shop":
+                        self.shop_menu(npc)
+                        break
+                    elif action.value == "start_quest":
+                        self.handle_dialogue_action(npc, action, data)
+                        pause("\nPress Enter to continue...")
+                        break
+                    elif action.value == "train":
+                        self.npc_train(npc)
+                        break
+                    elif action.value == "none" and not choice.next_node:
+                        # End dialogue if no next node
+                        pause("\nPress Enter to continue...")
+                        break
+                    elif action.value != "none":
+                        self.handle_dialogue_action(npc, action, data)
+                        pause("\nPress Enter to continue...")
+                        break
+                else:
+                    print("Invalid choice.")
+                    pause()
+            except ValueError:
+                print("Please enter a number.")
+                pause()
     
     def handle_dialogue_action(self, npc, action, data):
         """Handle dialogue action"""
