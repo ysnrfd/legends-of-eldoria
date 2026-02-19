@@ -302,9 +302,22 @@ class PluginManager:
                     for handler in handlers:
                         self._event_handlers[event_type].append(handler)
                 
-                # Register commands
+                # Register commands from plugin's _commands dict
                 for name, callback in plugin._commands.items():
                     self._commands[name] = callback
+                
+                # Register commands from register_commands() method if available
+                if hasattr(plugin, 'register_commands'):
+                    try:
+                        commands = plugin.register_commands(self)
+                        if commands:
+                            for name, cmd_data in commands.items():
+                                if isinstance(cmd_data, dict) and 'handler' in cmd_data:
+                                    self._commands[name] = cmd_data['handler']
+                                elif callable(cmd_data):
+                                    self._commands[name] = cmd_data
+                    except Exception as e:
+                        logger.warning(f"Error registering commands from {plugin.id}: {e}")
                 
                 # Enable plugin
                 if plugin.on_enable(self.game):
