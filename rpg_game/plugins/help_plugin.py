@@ -59,8 +59,9 @@ class HelpPlugin(Plugin):
         """Register event hooks"""
         return {}
     
-    def _cmd_help(self, game, args, context):
+    def _cmd_help(self, game, args):
         """Display help for all commands or a specific command"""
+
         # Get all registered commands from the plugin manager
         commands = {}
         if hasattr(game, 'plugin_manager') and game.plugin_manager:
