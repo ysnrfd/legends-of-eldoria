@@ -195,8 +195,11 @@ class HelpPlugin(Plugin):
         
         return "\n".join(lines)
     
-    def _format_all_commands(self, commands: Dict[str, Any]) -> str:
+    def _format_all_commands(self, commands: Dict[str, Any], command_info: Dict[str, Dict] = None) -> str:
         """Format help for all commands organized by category"""
+        if command_info is None:
+            command_info = {}
+        
         # Categorize commands
         categories = {
             "system": [],
@@ -207,8 +210,11 @@ class HelpPlugin(Plugin):
             "other": []
         }
         
-        for cmd_name, cmd_info in sorted(commands.items()):
+        for cmd_name in sorted(commands.keys()):
             category = "other"
+            
+            # Get command info from command_info dict (metadata)
+            cmd_info = command_info.get(cmd_name, {})
             
             if isinstance(cmd_info, dict):
                 category = cmd_info.get("category", "other")
