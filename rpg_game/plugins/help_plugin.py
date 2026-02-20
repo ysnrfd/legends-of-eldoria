@@ -121,7 +121,7 @@ class HelpPlugin(Plugin):
             }
         }
     
-    def _cmd_help(self, game, args, context) -> str:
+    def _cmd_help(self, game, args, context=None) -> str:
         """
         Display help for all commands or a specific command.
         
@@ -133,6 +133,7 @@ class HelpPlugin(Plugin):
         Returns:
             Formatted help string
         """
+
         # Get all registered commands from the plugin manager
         commands = {}
         if hasattr(game, 'plugin_manager') and game.plugin_manager:
@@ -257,7 +258,7 @@ class HelpPlugin(Plugin):
         
         return "\n".join(lines)
     
-    def _cmd_plugins(self, game, args, context) -> str:
+    def _cmd_plugins(self, game, args, context=None) -> str:
         """
         List all loaded plugins.
         
@@ -269,6 +270,7 @@ class HelpPlugin(Plugin):
         Returns:
             Formatted plugin list string
         """
+
         if not hasattr(game, 'plugin_manager') or not game.plugin_manager:
             return "Plugin manager not available."
         
@@ -301,7 +303,7 @@ class HelpPlugin(Plugin):
         
         return "\n".join(lines)
     
-    def _cmd_plugin_info(self, game, args, context) -> str:
+    def _cmd_plugin_info(self, game, args, context=None) -> str:
         """
         Show detailed information about a specific plugin.
         
@@ -313,6 +315,7 @@ class HelpPlugin(Plugin):
         Returns:
             Formatted plugin information string
         """
+
         if not args:
             return "Usage: /plugin_info <plugin_id>\nUse /plugins to see available plugins."
         
@@ -384,7 +387,7 @@ class HelpPlugin(Plugin):
         
         return "\n".join(lines)
     
-    def _cmd_plugin_stats(self, game, args, context) -> str:
+    def _cmd_plugin_stats(self, game, args, context=None) -> str:
         """
         Show plugin system statistics.
         
@@ -396,6 +399,7 @@ class HelpPlugin(Plugin):
         Returns:
             Formatted statistics string
         """
+
         if not hasattr(game, 'plugin_manager') or not game.plugin_manager:
             return "Plugin manager not available."
         
