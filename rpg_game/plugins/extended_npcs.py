@@ -1,79 +1,79 @@
 """
 Extended NPCs Plugin - New Characters Across the World
-Demonstrates comprehensive NPC system with dialogue and services
+Demonstrates comprehensive NPC system with dialogue, services, and quest provision.
 """
 
 from __future__ import annotations
-from systems.plugins import (
-    PluginBase, PluginInfo, PluginType, PluginPriority,
-    IContentProvider, IHotReloadablePlugin, EventPriority
-)
-from core.engine import Rarity, StatType, EventType
+from systems.plugins import Plugin, PluginInfo, PluginPriority, EventType
 from typing import Dict, List, Any
 
 
-class ExtendedNPCsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
+class ExtendedNPCsPlugin(Plugin):
     """
     Extended NPCs plugin with diverse characters.
     
     Features:
-    - Master craftsmen
+    - Master craftsmen (blacksmiths, enchanters)
     - Trainers for different skills
-    - Quest givers
-    - Special merchants
-    - Unique characters
+    - Quest givers with unique quests
+    - Special merchants with rare goods
+    - Unique characters with dialogue trees
+    - Friendship system integration
+    - Location-based NPC spawning
     """
     
-    @property
-    def info(self) -> PluginInfo:
-        return PluginInfo(
+    def __init__(self):
+        info = PluginInfo(
             id="extended_npcs",
             name="Extended NPCs",
             version="2.0.0",
             author="YSNRFD",
             description="Adds 14 new NPCs across the world including master craftsmen, "
-                       "trainers, quest givers, and special characters.",
-            
+                       "trainers, quest givers, and special characters with dialogue.",
             dependencies=[],
-            soft_dependencies=["extended_world"],
+            soft_dependencies=["extended_world", "extended_items"],
             conflicts=[],
-            provides=["extended_npcs"],
-            
-            priority=PluginPriority.NORMAL.value + 5,  # Load after locations
-            plugin_type=PluginType.CLASS,
-            
-            configurable=False,
-            supports_hot_reload=True,
-            
-            tags=["npcs", "characters", "merchants", "trainers"],
-            custom={"npc_count": 14}
+            priority=PluginPriority.NORMAL,
+            tags=["npcs", "characters", "merchants", "trainers", "quests"]
         )
+        super().__init__(info)
+        self._friendship_data: Dict[str, int] = {}
     
-    # =========================================================================
-    # Lifecycle
-    # =========================================================================
-    
-    def on_load(self, game):
+    def on_load(self, game) -> bool:
+        """Initialize NPCs"""
         print("[Extended NPCs] Loading extended NPC roster...")
+        self._friendship_data = {}
+        return True
     
-    def on_unload(self, game):
+    def on_unload(self, game) -> bool:
+        """Cleanup"""
         print("[Extended NPCs] Unloading...")
+        return True
     
-    def on_before_reload(self, game) -> Dict[str, Any]:
-        return {}
+    def on_enable(self, game) -> bool:
+        """Enable NPCs"""
+        print("[Extended NPCs] Enabled!")
+        return True
     
-    def on_after_reload(self, game, state: Dict[str, Any]) -> None:
-        print("[Extended NPCs] Reloaded!")
+    def on_disable(self, game) -> bool:
+        """Disable NPCs"""
+        return True
     
-    # =========================================================================
-    # Content Provider
-    # =========================================================================
+    def register_hooks(self, event_system) -> Dict[EventType, Any]:
+        """
+        Register NPC-related event hooks.
+        
+        Returns:
+            Dict mapping EventType to handler functions
+        """
+        return {
+            EventType.NPC_INTERACT: self._on_npc_interact,
+            EventType.LOCATION_ENTER: self._on_location_enter,
+            EventType.PLAYER_LEVEL_UP: self._on_level_up,
+            EventType.QUEST_COMPLETE: self._on_quest_complete,
+        }
     
-    def get_content_types(self) -> List[str]:
-        return ["npcs", "quests"]
-    
-    def get_content(self, content_type: str) -> Dict[str, Any]:
-        if content_type == "npcs":
+    def _on_npc_interact(self, game, data):
             return self._get_npcs()
         elif content_type == "quests":
             return self._get_quests()

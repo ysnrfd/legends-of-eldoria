@@ -1,107 +1,80 @@
 """
 ================================================================================
-Base Plugin Template - Complete Dynamic Plugin Development Reference
+Base Plugin Template - Complete Working Reference for Plugin Development
 ================================================================================
 
-This file serves as a comprehensive template for the dynamic plugin architecture.
-It demonstrates ALL available features and patterns.
+This file serves as a comprehensive template demonstrating the ACTUAL plugin 
+architecture used in Legends of Eldoria. Copy this file and modify it to 
+create your own plugins.
 
 SUPPORTED PLUGIN STYLES:
-1. Class-based (inherit from PluginBase)
-2. Protocol-based (duck typing with IPlugin)
-3. Functional (using PluginBuilder)
-4. Decorator-based (using @plugin decorator)
-5. Data-only (JSON/YAML files)
+1. Class-based (inherit from Plugin) - RECOMMENDED for complex plugins
+2. Functional (using PluginBuilder) - Good for simple plugins
+3. Decorator-based (using @plugin decorator) - For quick handlers
 
 ================================================================================
 """
 
 from __future__ import annotations
 from systems.plugins import (
-    PluginBase, PluginInfo, PluginType, PluginPriority,
-    EventPriority, IPlugin, IConfigurablePlugin, IHotReloadablePlugin,
-    IContentProvider, IEventSubscriber, ICommandProvider,
-    FunctionalPlugin, PluginBuilder, hook, command, define_plugin
+    Plugin, PluginInfo, PluginPriority, FunctionalPlugin, PluginBuilder, define_plugin
 )
-from core.engine import (
-    Rarity, DamageType, StatType, StatusEffectType, Weather, TimeOfDay,
-    Ability, AbilityType, TargetType, EventType
-)
-from typing import Dict, List, Any, Tuple, Optional
-from dataclasses import dataclass, field
-import random
+from core.engine import EventType
+from typing import Dict, List, Any, Optional
 
 
 # =============================================================================
-# STYLE 1: CLASS-BASED PLUGIN (Traditional Inheritance)
+# STYLE 1: CLASS-BASED PLUGIN (Traditional Inheritance) - RECOMMENDED
 # =============================================================================
 
-class BasePluginTemplate(PluginBase):
+class BasePluginTemplate(Plugin):
     """
     Complete plugin template using class-based approach.
     
     This style is recommended for complex plugins with lots of functionality.
+    Demonstrates all available features of the plugin system.
     """
     
-    # Instance state for hot reload
-    _state: Dict[str, Any] = {}
-    
-    @property
-    def info(self) -> PluginInfo:
-        """Plugin metadata - supports all new fields"""
-        return PluginInfo(
+    def __init__(self):
+        # Initialize plugin info
+        info = PluginInfo(
             # Required fields
             id="base_plugin_template",
             name="Base Plugin Template",
             version="2.0.0",
             author="Plugin Developer",
-            description="Comprehensive template demonstrating all dynamic plugin features.",
+            description="Comprehensive template demonstrating all plugin features.",
             
-            # Dependencies
-            dependencies=[],
-            soft_dependencies=["extended_items"],  # Optional dependency
-            conflicts=[],
-            provides=["template_content"],  # What this plugin provides
+            # Dependencies and conflicts
+            dependencies=[],           # Plugins that must load before this one
+            conflicts=[],            # Plugins that cannot run with this one
             
             # Loading configuration
-            priority=PluginPriority.NORMAL.value,
-            plugin_type=PluginType.CLASS,
-            
-            # Version compatibility
-            min_game_version="1.0.0",
-            max_game_version="",
-            api_version="2.0",
-            
-            # Configuration support
-            configurable=True,
-            config_schema={
-                "bonus_gold": {"type": "integer", "default": 100, "min": 0, "max": 10000},
-                "debug_mode": {"type": "boolean", "default": False},
-                "welcome_message": {"type": "string", "default": "Welcome!"}
-            },
-            default_config={
-                "bonus_gold": 100,
-                "debug_mode": False,
-                "welcome_message": "Template Plugin Loaded!"
-            },
-            
-            # Hot reload support
-            supports_hot_reload=True,
-            reload_priority=50,
+            priority=PluginPriority.NORMAL,  # Load order (lower = earlier)
             
             # Metadata
-            tags=["template", "example", "reference"],
-            homepage="https://example.com/plugin",
-            license="MIT",
-            custom={"category": "development", "stage": "production"}
+            tags=["template", "example", "reference"]
         )
+        super().__init__(info)
+        
+        # Initialize plugin state
+        self._state: Dict[str, Any] = {}
+        self._config: Dict[str, Any] = {}
     
     # =========================================================================
-    # LIFECYCLE METHODS
+    # LIFECYCLE METHODS (Required)
     # =========================================================================
     
-    def on_load(self, game):
-        """Called when plugin is loaded into memory"""
+    def on_load(self, game) -> bool:
+        """
+        Called when plugin is loaded into memory.
+        
+        Args:
+            game: The main game instance
+            
+        Returns:
+            bool: True if load successful, False otherwise
+        """
         print(f"[{self.info.name}] v{self.info.version} loading...")
         
         # Initialize state
@@ -111,88 +84,70 @@ class BasePluginTemplate(PluginBase):
             "commands_executed": 0
         }
         
-        # Apply configuration
-        self._config = self.info.default_config.copy()
-    
-    def on_unload(self, game):
-        """Called when plugin is being unloaded"""
-        print(f"[{self.info.name}] unloading...")
-        print(f"  Stats: {self._state['events_processed']} events, {self._state['commands_executed']} commands")
-    
-    def on_enable(self, game):
-        """Called when plugin is enabled"""
-        print(f"[{self.info.name}] enabled with config: {self._config}")
-    
-    def on_disable(self, game):
-        """Called when plugin is disabled"""
-        print(f"[{self.info.name}] disabled")
-    
-    # =========================================================================
-    # CONFIGURATION (IConfigurablePlugin)
-    # =========================================================================
-    
-    def get_config(self) -> Dict[str, Any]:
-        """Get current configuration"""
-        return self._config.copy()
-    
-    def set_config(self, config: Dict[str, Any]) -> None:
-        """Set configuration"""
-        self._config = {**self.info.default_config, **config}
-    
-    def validate_config(self, config: Dict[str, Any]) -> Tuple[bool, str]:
-        """Validate configuration"""
-        schema = self.info.config_schema
-        
-        for key, value in config.items():
-            if key not in schema:
-                return False, f"Unknown config key: {key}"
-            
-            spec = schema[key]
-            if spec["type"] == "integer":
-                if not isinstance(value, int):
-                    return False, f"{key} must be an integer"
-                if "min" in spec and value < spec["min"]:
-                    return False, f"{key} must be >= {spec['min']}"
-                if "max" in spec and value > spec["max"]:
-                    return False, f"{key} must be <= {spec['max']}"
-            elif spec["type"] == "boolean":
-                if not isinstance(value, bool):
-                    return False, f"{key} must be a boolean"
-            elif spec["type"] == "string":
-                if not isinstance(value, str):
-                    return False, f"{key} must be a string"
-        
-        return True, ""
-    
-    def on_config_changed(self, game, key: str, value: Any):
-        """Called when a config value changes"""
-        print(f"[{self.info.name}] Config changed: {key} = {value}")
-    
-    # =========================================================================
-    # HOT RELOAD (IHotReloadablePlugin)
-    # =========================================================================
-    
-    def on_before_reload(self, game) -> Dict[str, Any]:
-        """Save state before hot reload"""
-        print(f"[{self.info.name}] Saving state for hot reload...")
-        return {
-            "state": self._state.copy(),
-            "config": self._config.copy()
+        # Set default configuration
+        self._config = {
+            "bonus_gold": 100,
+            "debug_mode": False,
+            "welcome_message": "Template Plugin Loaded!"
         }
+        
+        return True
     
-    def on_after_reload(self, game, state: Dict[str, Any]) -> None:
-        """Restore state after hot reload"""
-        print(f"[{self.info.name}] Restoring state after hot reload...")
-        self._state = state.get("state", {})
-        self._config = state.get("config", self.info.default_config)
-        self._state["loads"] = self._state.get("loads", 0) + 1
+    def on_unload(self, game) -> bool:
+        """
+        Called when plugin is being unloaded.
+        
+        Args:
+            game: The main game instance
+            
+        Returns:
+            bool: True if unload successful, False otherwise
+        """
+        print(f"[{self.info.name}] unloading...")
+        print(f"  Stats: {self._state.get('events_processed', 0)} events, "
+              f"{self._state.get('commands_executed', 0)} commands")
+        return True
+    
+    def on_enable(self, game) -> bool:
+        """
+        Called when plugin is enabled.
+        
+        Args:
+            game: The main game instance
+            
+        Returns:
+            bool: True if enable successful, False otherwise
+        """
+        print(f"[{self.info.name}] enabled!")
+        return True
+    
+    def on_disable(self, game) -> bool:
+        """
+        Called when plugin is disabled.
+        
+        Args:
+            game: The main game instance
+            
+        Returns:
+            bool: True if disable successful, False otherwise
+        """
+        print(f"[{self.info.name}] disabled")
+        return True
     
     # =========================================================================
-    # EVENT HOOKS (IEventSubscriber)
+    # EVENT HOOKS
     # =========================================================================
     
-    def get_event_subscriptions(self) -> Dict[EventType, Any]:
-        """Return event subscriptions (alternative to register_hooks)"""
+    def register_hooks(self, event_system) -> Dict[EventType, Any]:
+        """
+        Register event hooks.
+        
+        Args:
+            event_system: The event system instance
+            
+        Returns:
+            Dict mapping EventType to handler functions
+        """
         return {
             EventType.COMBAT_START: self._on_combat_start,
             EventType.COMBAT_END: self._on_combat_end,
@@ -214,188 +169,160 @@ class BasePluginTemplate(PluginBase):
             EventType.GAME_LOAD: self._on_game_load,
         }
     
-    def register_hooks(self, event_system) -> Dict[EventType, Any]:
-        """Register event hooks with priority support"""
-        # Using priority for different handlers
-        return {
-            EventType.COMBAT_START: (self._on_combat_start, EventPriority.NORMAL),
-            EventType.COMBAT_END: (self._on_combat_end, EventPriority.HIGH),
-            EventType.PLAYER_LEVEL_UP: (self._on_level_up, EventPriority.NORMAL),
-        }
-    
     def _track_event(self):
         """Helper to track event processing"""
         self._state["events_processed"] = self._state.get("events_processed", 0) + 1
     
-    def _on_combat_start(self, data):
+    def _on_combat_start(self, game, data):
+        """Handle combat start event"""
         self._track_event()
         player = data.get("player")
         enemies = data.get("enemies", [])
         
-        # Apply debug mode bonus
         if self._config.get("debug_mode"):
             print(f"[DEBUG] Combat starting against {len(enemies)} enemies")
         
-        # Variety bonus
+        # Variety bonus for fighting diverse enemies
         if len(enemies) >= 3:
             print(f"[{self.info.name}] ⚔️ Variety bonus activated!")
-        
-        return None
     
-    def _on_combat_end(self, data):
+    def _on_combat_end(self, game, data):
+        """Handle combat end event"""
         self._track_event()
         player = data.get("player")
         result = data.get("result")
         
-        if result == "victory":
+        if result == "victory" and player:
             # Apply configured bonus
             bonus = self._config.get("bonus_gold", 100)
-            if bonus > 0 and player:
+            if bonus > 0:
                 player.inventory.gold += bonus
                 print(f"[{self.info.name}] Victory bonus: +{bonus} gold!")
-        
-        return None
     
-    def _on_combat_turn(self, data):
+    def _on_combat_turn(self, game, data):
+        """Handle combat turn event"""
         self._track_event()
-        return None
     
-    def _on_level_up(self, data):
+    def _on_level_up(self, game, data):
+        """Handle player level up event"""
         self._track_event()
         player = data.get("player")
         level = data.get("level", 1)
         
-        # Milestone rewards
+        # Milestone rewards every 5 levels
         if level % 5 == 0:
             print(f"[{self.info.name}] 🎯 Milestone level {level} reached!")
-            
-            # Give bonus ability
-            if level >= 10:
-                bonus_ability = Ability(
-                    name="Template Power",
-                    description="Power granted by the template.",
-                    ability_type=AbilityType.ACTIVE,
-                    target_type=TargetType.SINGLE_ENEMY,
-                    mp_cost=15,
-                    cooldown=3,
-                    damage=20 + level,
-                    damage_type=DamageType.HOLY
-                )
-                if player and bonus_ability not in player.abilities:
-                    player.abilities.append(bonus_ability)
-                    print(f"  ✨ New ability: {bonus_ability.name}!")
-        
-        return None
     
-    def _on_player_death(self, data):
+    def _on_player_death(self, game, data):
+        """Handle player death event"""
         self._track_event()
-        return None
     
-    def _on_item_pickup(self, data):
+    def _on_item_pickup(self, game, data):
+        """Handle item pickup event"""
         self._track_event()
         item = data.get("item")
         
         if item and hasattr(item, 'rarity'):
-            if item.rarity in [Rarity.EPIC, Rarity.LEGENDARY]:
+            rarity = item.rarity
+            if rarity.value >= 4:  # Epic or higher
                 print(f"[{self.info.name}] ✨ Rare item discovered: {item.name}!")
-        
-        return None
     
-    def _on_item_equip(self, data):
+    def _on_item_equip(self, game, data):
+        """Handle item equip event"""
         self._track_event()
-        return None
     
-    def _on_item_use(self, data):
+    def _on_item_use(self, game, data):
+        """Handle item use event"""
         self._track_event()
-        return None
     
-    def _on_npc_interact(self, data):
+    def _on_npc_interact(self, game, data):
+        """Handle NPC interaction event"""
         self._track_event()
-        return None
     
-    def _on_quest_start(self, data):
+    def _on_quest_start(self, game, data):
+        """Handle quest start event"""
         self._track_event()
-        return None
     
-    def _on_quest_complete(self, data):
+    def _on_quest_complete(self, game, data):
+        """Handle quest complete event"""
         self._track_event()
-        return None
     
-    def _on_location_enter(self, data):
+    def _on_location_enter(self, game, data):
+        """Handle location enter event"""
         self._track_event()
         location_id = data.get("location_id")
         
         # Check if this is a template location
         if location_id and location_id.startswith("template_"):
             print(f"[{self.info.name}] Entered template area: {location_id}")
-        
-        return None
     
-    def _on_location_exit(self, data):
+    def _on_location_exit(self, game, data):
+        """Handle location exit event"""
         self._track_event()
-        return None
     
-    def _on_time_change(self, data):
+    def _on_time_change(self, game, data):
+        """Handle time change event"""
         self._track_event()
         new_time = data.get("new_time")
         
-        if new_time == TimeOfDay.MIDNIGHT:
+        if new_time and new_time.name == "MIDNIGHT":
             print(f"[{self.info.name}] 🌙 The witching hour...")
-        
-        return None
     
-    def _on_weather_change(self, data):
+    def _on_weather_change(self, game, data):
+        """Handle weather change event"""
         self._track_event()
         new_weather = data.get("new_weather")
         
-        if new_weather == Weather.BLOOD_MOON:
+        if new_weather and new_weather.name == "BLOOD_MOON":
             print(f"[{self.info.name}] 🩸 The blood moon rises!")
-        
-        return None
     
-    def _on_game_start(self, data):
+    def _on_game_start(self, game, data):
+        """Handle game start event"""
         self._track_event()
         print(f"[{self.info.name}] {self._config.get('welcome_message', 'Welcome!')}")
-        return None
     
-    def _on_game_save(self, data):
+    def _on_game_save(self, game, data):
+        """Handle game save event"""
         self._track_event()
-        return None
     
-    def _on_game_load(self, data):
+    def _on_game_load(self, game, data):
+        """Handle game load event"""
         self._track_event()
-        return None
     
     # =========================================================================
-    # COMMANDS (ICommandProvider)
+    # COMMANDS
     # =========================================================================
-    
-    def get_commands(self) -> Dict[str, Any]:
-        """Return commands (alternative to register_commands)"""
-        return {
-            "template_info": (self._cmd_info, "Show template plugin info", [], "system"),
-            "template_config": (self._cmd_config, "Manage plugin configuration", [], "system"),
-            "template_stats": (self._cmd_stats, "Show plugin statistics", [], "debug"),
-            "template_bonus": (self._cmd_bonus, "Give template bonus", [], "debug"),
-        }
     
     def register_commands(self, command_system) -> Dict[str, Any]:
-        """Register commands with full metadata"""
+        """
+        Register slash commands.
+        
+        Args:
+            command_system: The command system instance
+            
+        Returns:
+            Dict mapping command names to handler info
+        """
         return {
             "template_info": {
                 "handler": self._cmd_info,
-                "help": "Show template plugin information",
+                "help": "Show template plugin info",
                 "category": "system"
             },
             "template_config": {
                 "handler": self._cmd_config,
-                "help": "View or set configuration",
+                "help": "Manage plugin configuration",
                 "usage": "/template_config [key] [value]",
                 "category": "system"
             },
             "template_stats": {
                 "handler": self._cmd_stats,
                 "help": "Show plugin statistics",
+                "category": "stats"
+            },
+            "template_bonus": {
+                "handler": self._cmd_bonus,
+                "help": "Give template bonus",
                 "category": "debug"
             }
         }
@@ -407,15 +334,12 @@ class BasePluginTemplate(PluginBase):
     def _cmd_info(self, game, args, context):
         """Display plugin information"""
         self._track_command()
-        info = self.info
         return (
-            f"Plugin: {info.name} v{info.version}\n"
-            f"Author: {info.author}\n"
-            f"Type: {info.plugin_type.value}\n"
-            f"Priority: {info.priority}\n"
-            f"Tags: {', '.join(info.tags)}\n"
-            f"Hot Reload: {'Yes' if info.supports_hot_reload else 'No'}\n"
-            f"\n{info.description}"
+            f"Plugin: {self.info.name} v{self.info.version}\n"
+            f"Author: {self.info.author}\n"
+            f"Priority: {self.info.priority.name}\n"
+            f"Tags: {', '.join(self.info.tags)}\n"
+            f"\n{self.info.description}"
         )
     
     def _cmd_config(self, game, args, context):
@@ -430,26 +354,23 @@ class BasePluginTemplate(PluginBase):
             return f"{key} = {self._config.get(key, 'Not found')}"
         
         key, value = args[0], args[1]
+        old_value = self._config.get(key)
         
         # Parse value
-        schema = self.info.config_schema.get(key, {})
-        if schema.get("type") == "integer":
+        if value.lower() in ("true", "yes", "1", "on"):
+            value = True
+        elif value.lower() in ("false", "no", "0", "off"):
+            value = False
+        else:
             try:
                 value = int(value)
             except ValueError:
-                return f"Invalid integer: {value}"
-        elif schema.get("type") == "boolean":
-            value = value.lower() in ("true", "yes", "1", "on")
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass  # Keep as string
         
-        # Validate
-        valid, msg = self.validate_config({key: value})
-        if not valid:
-            return f"Validation error: {msg}"
-        
-        # Apply
-        old_value = self._config.get(key)
         self._config[key] = value
-        self.on_config_changed(game, key, value)
         
         return f"Set {key}: {old_value} -> {value}"
     
@@ -458,7 +379,6 @@ class BasePluginTemplate(PluginBase):
         self._track_command()
         return (
             f"Plugin Statistics:\n"
-            f"  Loads: {self._state.get('loads', 0)}\n"
             f"  Events Processed: {self._state.get('events_processed', 0)}\n"
             f"  Commands Executed: {self._state.get('commands_executed', 0)}"
         )
@@ -466,46 +386,23 @@ class BasePluginTemplate(PluginBase):
     def _cmd_bonus(self, game, args, context):
         """Give template bonus to player"""
         self._track_command()
-        if game and game.player:
+        if game and hasattr(game, 'player') and game.player:
             bonus = self._config.get("bonus_gold", 100)
             game.player.inventory.gold += bonus
             return f"Template bonus applied: +{bonus} gold!"
         return "No player available"
     
     # =========================================================================
-    # CONTENT REGISTRATION (IContentProvider)
+    # CONTENT REGISTRATION
     # =========================================================================
     
-    def get_content_types(self) -> List[str]:
-        """Return content types this plugin provides"""
-        return ["items", "enemies", "locations", "npcs", "quests", "recipes"]
-    
-    def get_content(self, content_type: str) -> Dict[str, Any]:
-        """Return content of a specific type"""
-        content_map = {
-            "items": self._get_items,
-            "enemies": self._get_enemies,
-            "locations": self._get_locations,
-            "npcs": self._get_npcs,
-            "quests": self._get_quests,
-            "recipes": self._get_recipes
-        }
+    def register_items(self, item_registry) -> Dict[str, Dict]:
+        """
+        Register items provided by this plugin.
         
-        if content_type in content_map:
-            return content_map[content_type]()
-        return {}
-    
-    def register_content(self, content_registry) -> Dict[str, Dict]:
-        """Generic content registration - supports any content type"""
-        all_content = {}
-        for content_type in self.get_content_types():
-            content = self.get_content(content_type)
-            if content:
-                all_content[content_type] = content
-        return all_content
-    
-    def _get_items(self) -> Dict[str, Dict]:
-        """Return items added by this plugin"""
+        Returns:
+            Dict mapping item IDs to item data
+        """
         return {
             "template_blade": {
                 "name": "Template Blade",
@@ -516,7 +413,7 @@ class BasePluginTemplate(PluginBase):
                 "description": "A weapon forged from the essence of templates.",
                 "damage_min": 12,
                 "damage_max": 24,
-                "damage_type": "holy",
+                "damage_type": "physical",
                 "attack_speed": 1.0,
                 "critical_chance": 0.10,
                 "level_required": 5
@@ -531,7 +428,6 @@ class BasePluginTemplate(PluginBase):
                 "slot": "chest",
                 "defense": 30,
                 "magic_defense": 15,
-                "stat_bonuses": {"constitution": 3},
                 "level_required": 15
             },
             "template_potion": {
@@ -552,14 +448,17 @@ class BasePluginTemplate(PluginBase):
                 "value": 1500,
                 "weight": 0.1,
                 "description": "A ring blessed by the template creators.",
-                "stat_bonuses": {"luck": 4, "charisma": 2},
-                "special_effects": ["+15% Experience", "+10% Gold Find"],
                 "level_required": 10
             }
         }
     
-    def _get_enemies(self) -> Dict[str, Dict]:
-        """Return enemies added by this plugin"""
+    def register_enemies(self, enemy_registry) -> Dict[str, Dict]:
+        """
+        Register enemies provided by this plugin.
+        
+        Returns:
+            Dict mapping enemy IDs to enemy data
+        """
         return {
             "template_guardian": {
                 "name": "Template Guardian",
@@ -585,20 +484,21 @@ class BasePluginTemplate(PluginBase):
             }
         }
     
-    def _get_locations(self) -> Dict[str, Dict]:
-        """Return locations added by this plugin"""
+    def get_new_locations(self) -> Dict[str, Dict]:
+        """
+        Return new locations added by this plugin.
+        
+        Returns:
+            Dict mapping location IDs to location data
+        """
         return {
             "template_sanctum": {
                 "name": "Template Sanctum",
-                "description": "A peaceful sanctuary where templates are created and refined.",
+                "description": "A peaceful sanctuary where templates are created.",
                 "location_type": "special",
                 "level_range": [1, 30],
                 "connections": ["capital_city"],
                 "danger_level": 0,
-                "special_features": {
-                    "meditation_bonus": {"exp_mult": 1.5},
-                    "free_healing": True
-                },
                 "discovery_exp": 200
             },
             "template_dungeon": {
@@ -617,12 +517,17 @@ class BasePluginTemplate(PluginBase):
             }
         }
     
-    def _get_npcs(self) -> Dict[str, Dict]:
-        """Return NPCs added by this plugin"""
+    def get_new_npcs(self) -> Dict[str, Dict]:
+        """
+        Return new NPCs added by this plugin.
+        
+        Returns:
+            Dict mapping NPC IDs to NPC data
+        """
         return {
             "template_sage": {
                 "name": "The Template Sage",
-                "description": "An ancient being who has mastered the art of templates.",
+                "description": "An ancient being who has mastered templates.",
                 "npc_type": "trainer",
                 "location": "template_sanctum",
                 "services": ["train", "identify", "enchant"],
@@ -639,12 +544,17 @@ class BasePluginTemplate(PluginBase):
             }
         }
     
-    def _get_quests(self) -> Dict[str, Dict]:
-        """Return quests added by this plugin"""
+    def get_new_quests(self) -> Dict[str, Dict]:
+        """
+        Return new quests added by this plugin.
+        
+        Returns:
+            Dict mapping quest IDs to quest data
+        """
         return {
             "template_discovery": {
                 "name": "The Template Vault",
-                "description": "Explore the mysterious Template Vault and uncover its secrets.",
+                "description": "Explore the mysterious Template Vault.",
                 "quest_type": "side",
                 "location": "capital_city",
                 "level_required": 10,
@@ -662,8 +572,13 @@ class BasePluginTemplate(PluginBase):
             }
         }
     
-    def _get_recipes(self) -> Dict[str, Dict]:
-        """Return crafting recipes added by this plugin"""
+    def register_recipes(self, crafting_manager) -> Dict[str, Dict]:
+        """
+        Register crafting recipes provided by this plugin.
+        
+        Returns:
+            Dict mapping recipe IDs to recipe data
+        """
         return {
             "template_blade_recipe": {
                 "name": "Template Blade Recipe",
@@ -678,30 +593,6 @@ class BasePluginTemplate(PluginBase):
                 "experience": 50
             }
         }
-    
-    # =========================================================================
-    # LEGACY SUPPORT (Backward Compatibility)
-    # =========================================================================
-    
-    # These methods maintain backward compatibility with older plugin loading
-    
-    def register_items(self, item_registry):
-        return self._get_items()
-    
-    def register_enemies(self, enemy_registry):
-        return self._get_enemies()
-    
-    def get_new_locations(self):
-        return self._get_locations()
-    
-    def get_new_npcs(self):
-        return self._get_npcs()
-    
-    def get_new_quests(self):
-        return self._get_quests()
-    
-    def register_recipes(self, crafting_manager):
-        return self._get_recipes()
 
 
 # =============================================================================
@@ -715,8 +606,21 @@ def create_functional_plugin():
     """
     def on_load(game):
         print("Functional Plugin loaded!")
+        return True
     
-    def on_combat_end(data):
+    def on_unload(game):
+        print("Functional Plugin unloaded!")
+        return True
+    
+    def on_enable(game):
+        print("Functional Plugin enabled!")
+        return True
+    
+    def on_disable(game):
+        print("Functional Plugin disabled!")
+        return True
+    
+    def on_combat_end(game, data):
         if data.get("result") == "victory":
             print("Victory in functional plugin!")
     
@@ -728,10 +632,12 @@ def create_functional_plugin():
         .version("1.0.0")
         .author("Plugin Developer")
         .description("A plugin built with the fluent API")
-        .priority(PluginPriority.LOW.value)
+        .priority(PluginPriority.LOW)
         .tags("functional", "example")
-        .supports_hot_reload(True)
         .on_load(on_load)
+        .on_unload(on_unload)
+        .on_enable(on_enable)
+        .on_disable(on_disable)
         .hook(EventType.COMBAT_END, on_combat_end)
         .command("hello", cmd_hello, "Say hello")
         .content("items", {"func_item": {"name": "Functional Item"}})
@@ -739,41 +645,55 @@ def create_functional_plugin():
 
 
 # =============================================================================
-# STYLE 3: DECORATOR-BASED PLUGIN
+# STYLE 3: MINIMAL PLUGIN (Simplest Possible)
 # =============================================================================
 
-# Note: Uncomment to use this style
-# @plugin({
-#     "id": "decorator_template",
-#     "name": "Decorator Plugin Template",
-#     "version": "1.0.0",
-#     "author": "Plugin Developer",
-#     "description": "Plugin using decorators"
-# })
-# class DecoratorTemplate:
-#     
-#     @hook(EventType.COMBAT_START)
-#     def on_combat_start(self, data):
-#         print("Combat starting (decorator plugin)")
-#     
-#     @command("dec_test", "Test command from decorator plugin")
-#     def test_command(self, game, args):
-#         return "Decorator plugin test!"
+class MinimalPlugin(Plugin):
+    """The simplest possible plugin."""
+    
+    def __init__(self):
+        super().__init__(PluginInfo(
+            id="minimal",
+            name="Minimal Plugin",
+            version="1.0.0",
+            author="Developer",
+            description="Minimal example"
+        ))
+    
+    def on_load(self, game) -> bool:
+        print("Minimal plugin loaded!")
+        return True
+    
+    def on_unload(self, game) -> bool:
+        print("Minimal plugin unloaded!")
+        return True
+    
+    def on_enable(self, game) -> bool:
+        return True
+    
+    def on_disable(self, game) -> bool:
+        return True
 
 
 # =============================================================================
-# PLUGIN INSTANCE
+# PLUGIN INSTANCE - REQUIRED
 # =============================================================================
 
-# Required: Create the plugin instance for discovery
+# Create the plugin instance for discovery
+# Uncomment the style you want to use:
+
+# Style 1: Class-based (RECOMMENDED)
 plugin = BasePluginTemplate()
 
-# Alternative: Uncomment to use functional plugin instead
+# Style 2: Functional
 # plugin = create_functional_plugin()
+
+# Style 3: Minimal
+# plugin = MinimalPlugin()
 
 
 # =============================================================================
-# ADDITIONAL DOCUMENTATION
+# DOCUMENTATION
 # =============================================================================
 
 """
@@ -781,69 +701,69 @@ QUICK START GUIDE:
 ------------------
 
 1. Copy this file to plugins folder
-2. Rename and customize
-3. Implement needed methods
-4. Plugin auto-loads
+2. Rename the class and plugin_id
+3. Customize the content methods
+4. The plugin auto-loads on game start
 
-SUPPORTED STYLES:
------------------
+AVAILABLE EVENT TYPES:
+---------------------
 
-1. CLASS-BASED (Recommended for complex plugins):
-   - Inherit from PluginBase
-   - Override methods as needed
-   - Full state management
+Combat Events:
+- COMBAT_START: Combat begins
+- COMBAT_END: Combat ends  
+- COMBAT_TURN: Each combat turn
 
-2. FUNCTIONAL (Recommended for simple plugins):
-   - Use PluginBuilder with fluent API
-   - Chain method calls
-   - No class needed
+Player Events:
+- PLAYER_LEVEL_UP: Player levels up
+- PLAYER_DEATH: Player dies
 
-3. DECORATOR (Recommended for handlers):
-   - Use @plugin, @hook, @command decorators
-   - Clean, declarative syntax
+Item Events:
+- ITEM_PICKUP: Item picked up
+- ITEM_EQUIP: Item equipped
+- ITEM_USE: Item used
 
-4. DATA-ONLY (For content-only plugins):
-   - Create JSON or YAML file
-   - Define items, enemies, etc.
-   - No Python code needed
+World Events:
+- LOCATION_ENTER: Enter location
+- LOCATION_EXIT: Exit location
+- TIME_CHANGE: Time changes
+- WEATHER_CHANGE: Weather changes
 
-NEW FEATURES IN V2:
--------------------
+NPC/Quest Events:
+- NPC_INTERACT: NPC interaction
+- QUEST_START: Quest started
+- QUEST_COMPLETE: Quest completed
 
-- Dynamic content types
-- Event priorities
-- Hot reload support
-- Configuration management
-- Plugin dependencies
-- Soft dependencies
-- Plugin protocols (duck typing)
-- Command categories
-- Event middleware
-- Async event handling
-- Plugin statistics
-- File change detection
+System Events:
+- GAME_START: Game starts
+- GAME_SAVE: Game saved
+- GAME_LOAD: Game loaded
 
-EXAMPLE MINIMAL PLUGIN:
------------------------
+CONTENT REGISTRATION METHODS:
+------------------------------
 
-from systems.plugins import PluginBase, PluginInfo
+- register_items(): Return dict of items
+- register_enemies(): Return dict of enemies
+- get_new_locations(): Return dict of locations
+- get_new_npcs(): Return dict of NPCs
+- get_new_quests(): Return dict of quests
+- register_recipes(): Return dict of recipes
 
-class MinimalPlugin(PluginBase):
-    @property
-    def info(self):
-        return PluginInfo(
-            id="minimal",
-            name="Minimal Plugin",
-            version="1.0.0",
-            author="Developer",
-            description="Minimal example"
-        )
+COMMAND HANDLER SIGNATURE:
+---------------------------
+
+def cmd_handler(game, args, context):
+    game: The main game instance
+    args: List of command arguments
+    context: Additional context dict
     
-    def on_load(self, game):
-        print("Loaded!")
-    
-    def on_unload(self, game):
-        print("Unloaded!")
+    Returns: String response message
 
-plugin = MinimalPlugin()
+EVENT HANDLER SIGNATURE:
+------------------------
+
+def event_handler(game, data):
+    game: The main game instance
+    data: Event data dict (varies by event)
+    
+    Returns: None (or modified data for some events)
 """

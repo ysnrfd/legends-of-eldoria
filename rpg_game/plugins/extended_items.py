@@ -1,99 +1,244 @@
 """
 Extended Items Plugin - New Weapons, Armor, and Consumables
-Demonstrates comprehensive item system with content provider pattern
+Demonstrates comprehensive item system with content provider pattern.
 """
 
 from __future__ import annotations
-from systems.plugins import (
-    PluginBase, PluginInfo, PluginType, PluginPriority,
-    IContentProvider, IHotReloadablePlugin
-)
-from core.engine import Rarity, DamageType, StatType, EventType
+from systems.plugins import Plugin, PluginInfo, PluginPriority, EventType
+from core.engine import Rarity
 from typing import Dict, List, Any
 
 
-class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
+class ExtendedItemsPlugin(Plugin):
     """
     Extended Items plugin with comprehensive item additions.
     
     Features:
-    - New weapon types
-    - New armor sets
-    - New consumables
-    - New accessories
+    - New weapon types (elemental, legendary)
+    - New armor sets (dragon, shadow, mage)
+    - New consumables (potions, elixirs)
+    - New accessories (rings, amulets)
     - Crafting materials
+    - Crafting recipes
+    - Drop rate configuration
     """
     
-    @property
-    def info(self) -> PluginInfo:
-        return PluginInfo(
+    def __init__(self):
+        info = PluginInfo(
             id="extended_items",
             name="Extended Items",
             version="2.0.0",
             author="YSNRFD",
-            description="Adds new weapons, armor, consumables, accessories, and materials "
-                       "to expand the game's item system.",
-            
+            description="Adds new weapons, armor, consumables, accessories, materials, "
+                       "and crafting recipes to expand the game's item system.",
             dependencies=[],
             soft_dependencies=["enhanced_combat"],
             conflicts=[],
-            provides=["extended_items"],
-            
-            priority=PluginPriority.NORMAL.value,
-            plugin_type=PluginType.CLASS,
-            
-            configurable=True,
-            config_schema={
-                "legendary_drop_rate": {
-                    "type": "number", "default": 0.01, "min": 0, "max": 1
-                },
-                "enable_custom_items": {
-                    "type": "boolean", "default": True
-                }
-            },
-            default_config={
-                "legendary_drop_rate": 0.01,
-                "enable_custom_items": True
-            },
-            
-            supports_hot_reload=True,
-            tags=["items", "equipment", "loot"],
-            custom={"item_count": 12}
+            priority=PluginPriority.NORMAL,
+            tags=["items", "equipment", "loot", "crafting"]
         )
+        super().__init__(info)
+        self._config: Dict[str, Any] = {}
     
-    # =========================================================================
-    # Lifecycle
-    # =========================================================================
-    
-    def on_load(self, game):
+    def on_load(self, game) -> bool:
+        """Initialize extended items"""
         print("[Extended Items] Loading extended item collection...")
-        self._config = self.info.default_config.copy()
+        
+        self._config = {
+            "legendary_drop_rate": 0.01,
+            "epic_drop_rate": 0.05,
+            "rare_drop_rate": 0.15,
+            "enable_custom_items": True,
+            "crafting_bonus": 1.0
+        }
+        
+        return True
     
-    def on_unload(self, game):
+    def on_unload(self, game) -> bool:
+        """Cleanup"""
         print("[Extended Items] Unloading...")
+        return True
     
-    def on_before_reload(self, game) -> Dict[str, Any]:
-        return {"config": self._config.copy()}
+    def on_enable(self, game) -> bool:
+        """Enable items"""
+        print("[Extended Items] Enabled!")
+        return True
     
-    def on_after_reload(self, game, state: Dict[str, Any]) -> None:
-        self._config = state.get("config", self.info.default_config)
+    def on_disable(self, game) -> bool:
+        """Disable items"""
+        return True
     
-    # =========================================================================
-    # Content Provider Implementation
-    # =========================================================================
+    def register_hooks(self, event_system) -> Dict[EventType, Any]:
+        """
+        Register item-related event hooks.
+        
+        Returns:
+            Dict mapping EventType to handler functions
+        """
+        return {
+            EventType.ITEM_PICKUP: self._on_item_pickup,
+            EventType.ITEM_EQUIP: self._on_item_equip,
+            EventType.ITEM_USE: self._on_item_use,
+        }
     
-    def get_content_types(self) -> List[str]:
-        return ["items"]
+    def _on_item_pickup(self, game, data):
+        """Handle rare item discoveries"""
+        item = data.get("item")
+        player = data.get("player")
+        
+        if not item or not hasattr(item, 'rarity'):
+            return
+        
+        # Announce legendary/epic finds
+        if item.rarity == Rarity.LEGENDARY:
+            print(f"🌟 LEGENDARY item found: {item.name}!")
+            if player:
+                print(f"   This will serve you well, {player.name}!")
+        elif item.rarity == Rarity.EPIC:
+            print(f"✨ Epic item discovered: {item.name}!")
     
-    def get_content(self, content_type: str) -> Dict[str, Any]:
-        if content_type == "items":
-            return self.get_all_items()
-        return {}
+    def _on_item_equip(self, game, data):
+        """Handle item equips"""
+        item = data.get("item")
+        
+        if item and hasattr(item, 'special_effects'):
+            effects = item.special_effects
+            if effects:
+                print(f"  Special effects active: {', '.join(effects)}")
     
-    def register_content(self, content_registry) -> Dict[str, Dict]:
-        return {"items": self.get_all_items()}
+    def _on_item_use(self, game, data):
+        """Handle item usage"""
+        item = data.get("item")
+        
+        if item and hasattr(item, 'use_message'):
+            print(f"  {item.use_message}")
     
-    def get_all_items(self) -> Dict[str, Dict]:
+    def register_commands(self, command_system) -> Dict[str, Any]:
+        """
+        Register item-related commands.
+        
+        Returns:
+            Dict mapping command names to handler info
+        """
+        return {
+            "item_list": {
+                "handler": self._cmd_list,
+                "help": "List all extended items by category",
+                "category": "info"
+            },
+            "item_config": {
+                "handler": self._cmd_config,
+                "help": "Configure item drop rates",
+                "usage": "/item_config [key] [value]",
+                "category": "config"
+            },
+            "item_search": {
+                "handler": self._cmd_search,
+                "help": "Search for items by name or type",
+                "usage": "/item_search <query>",
+                "category": "info"
+            },
+            "recipes": {
+                "handler": self._cmd_recipes,
+                "help": "List all crafting recipes",
+                "category": "info"
+            }
+        }
+    
+    def _cmd_list(self, game, args, context) -> str:
+        """List all extended items"""
+        items = self._get_all_items()
+        
+        # Group by type
+        by_type: Dict[str, List] = {}
+        for item_id, item_data in items.items():
+            item_type = item_data.get("item_type", "unknown")
+            if item_type not in by_type:
+                by_type[item_type] = []
+            by_type[item_type].append((item_id, item_data))
+        
+        lines = ["Extended Items:", "=" * 50]
+        for item_type, items_list in sorted(by_type.items()):
+            lines.append(f"\n[{item_type.upper()}]")
+            for item_id, item_data in items_list:
+                rarity = item_data.get("rarity", "Common")
+                name = item_data.get("name", item_id)
+                level = item_data.get("level_required", 1)
+                lines.append(f"  • {name} ({rarity}) - Lv.{level}")
+        
+        lines.append(f"\nTotal: {len(items)} items")
+        return "\n".join(lines)
+    
+    def _cmd_config(self, game, args, context) -> str:
+        """Configure item settings"""
+        if not args:
+            return f"Item Config: {self._config}"
+        
+        if len(args) == 1:
+            key = args[0]
+            return f"{key} = {self._config.get(key, 'Not found')}"
+        
+        key, value = args[0], args[1]
+        
+        # Parse value
+        if value.lower() in ("true", "yes", "1", "on"):
+            value = True
+        elif value.lower() in ("false", "no", "0", "off"):
+            value = False
+        else:
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        
+        old_value = self._config.get(key)
+        self._config[key] = value
+        
+        return f"Set {key}: {old_value} -> {value}"
+    
+    def _cmd_search(self, game, args, context) -> str:
+        """Search for items"""
+        if not args:
+            return "Usage: /item_search <query>"
+        
+        query = args[0].lower()
+        items = self._get_all_items()
+        
+        results = []
+        for item_id, item_data in items.items():
+            name = item_data.get("name", "").lower()
+            item_type = item_data.get("item_type", "").lower()
+            if query in name or query in item_type or query in item_id.lower():
+                results.append((item_id, item_data))
+        
+        if not results:
+            return f"No items found matching '{args[0]}'"
+        
+        lines = [f"Search results for '{args[0]}':"]
+        for item_id, item_data in results:
+            lines.append(f"  • {item_data.get('name')} ({item_data.get('item_type')})")
+        
+        return "\n".join(lines)
+    
+    def _cmd_recipes(self, game, args, context) -> str:
+        """List all crafting recipes"""
+        recipes = self._get_recipes()
+        
+        lines = ["Crafting Recipes:", "=" * 50]
+        for recipe_id, recipe in recipes.items():
+            result = recipe.get("result", "unknown")
+            result_qty = recipe.get("result_quantity", 1)
+            skill = recipe.get("skill_required", "None")
+            level = recipe.get("skill_level", 0)
+            
+            lines.append(f"\n{recipe.get('name', recipe_id)}:")
+            lines.append(f"  Result: {result} x{result_qty}")
+            lines.append(f"  Skill: {skill} (Lv.{level})")
+            lines.append(f"  Ingredients: {recipe.get('ingredients', {})}")
+        
+        return "\n".join(lines)
+    
+    def _get_all_items(self) -> Dict[str, Dict]:
         """Get all items from this plugin"""
         items = {}
         items.update(self._get_weapons())
@@ -103,9 +248,14 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
         items.update(self._get_materials())
         return items
     
-    # =========================================================================
-    # Item Definitions
-    # =========================================================================
+    def register_items(self, item_registry) -> Dict[str, Dict]:
+        """
+        Register items provided by this plugin.
+        
+        Returns:
+            Dict mapping item IDs to item data
+        """
+        return self._get_all_items()
     
     def _get_weapons(self) -> Dict[str, Dict]:
         """New weapons"""
@@ -117,8 +267,7 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "rarity": "Epic",
                 "value": 3500,
                 "weight": 8.0,
-                "description": "A massive hammer that crackles with lightning. "
-                             "Each strike echoes with thunder.",
+                "description": "A massive hammer that crackles with lightning.",
                 "damage_min": 18,
                 "damage_max": 32,
                 "damage_type": "lightning",
@@ -129,15 +278,13 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "level_required": 12,
                 "special_effects": ["Chain Lightning on critical"]
             },
-            
             "void_dagger": {
                 "name": "Void Dagger",
                 "item_type": "weapon",
                 "rarity": "Legendary",
                 "value": 8000,
                 "weight": 0.3,
-                "description": "A dagger forged from pure darkness. "
-                             "It seems to absorb light around it.",
+                "description": "A dagger forged from pure darkness.",
                 "damage_min": 12,
                 "damage_max": 24,
                 "damage_type": "dark",
@@ -148,15 +295,13 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "stat_requirements": {"dexterity": 18},
                 "special_effects": ["Shadow Step on kill", "Life Steal 10%"]
             },
-            
             "holy_lance": {
                 "name": "Holy Lance",
                 "item_type": "weapon",
                 "rarity": "Epic",
                 "value": 4000,
                 "weight": 4.0,
-                "description": "A blessed lance that glows with divine light. "
-                             "Effective against unholy creatures.",
+                "description": "A blessed lance that glows with divine light.",
                 "damage_min": 15,
                 "damage_max": 28,
                 "damage_type": "holy",
@@ -167,15 +312,13 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "stat_requirements": {"strength": 14, "charisma": 12},
                 "special_effects": ["+50% damage to undead", "Divine Smite ability"]
             },
-            
             "frost_staff": {
                 "name": "Staff of the Frozen North",
                 "item_type": "weapon",
                 "rarity": "Epic",
                 "value": 4500,
                 "weight": 2.5,
-                "description": "A staff carved from eternal ice. "
-                             "Frost crystals form wherever it touches.",
+                "description": "A staff carved from eternal ice.",
                 "damage_min": 8,
                 "damage_max": 18,
                 "damage_type": "ice",
@@ -186,8 +329,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "stat_requirements": {"intelligence": 16},
                 "special_effects": ["Freeze chance 15%", "Ice Armor spell"]
             },
-            
-            # Rare Weapons
             "steel_katana": {
                 "name": "Steel Katana",
                 "item_type": "weapon",
@@ -201,21 +342,34 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "attack_speed": 1.4,
                 "critical_chance": 0.15,
                 "level_required": 8
+            },
+            "flame_sword": {
+                "name": "Flame Tongue",
+                "item_type": "weapon",
+                "rarity": "Epic",
+                "value": 3200,
+                "weight": 3.0,
+                "description": "A blade that burns with eternal flame.",
+                "damage_min": 14,
+                "damage_max": 26,
+                "damage_type": "fire",
+                "attack_speed": 1.0,
+                "critical_chance": 0.12,
+                "level_required": 12,
+                "special_effects": ["Burn damage over time", "Fire resistance +20%"]
             }
         }
     
     def _get_armor(self) -> Dict[str, Dict]:
         """New armor"""
         return {
-            # Legendary Armor
             "dragon_plate": {
                 "name": "Dragon Plate Armor",
                 "item_type": "armor",
                 "rarity": "Legendary",
                 "value": 30000,
                 "weight": 25.0,
-                "description": "Armor forged from the scales of an ancient dragon. "
-                             "Even dragonfire cannot pierce it.",
+                "description": "Armor forged from the scales of an ancient dragon.",
                 "slot": "chest",
                 "defense": 50,
                 "magic_defense": 30,
@@ -225,16 +379,13 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "stat_requirements": {"strength": 18},
                 "special_effects": ["Dragon's Fury on hit", "Fire immunity"]
             },
-            
-            # Epic Armor
             "shadow_cloak": {
                 "name": "Shadow Cloak",
                 "item_type": "armor",
                 "rarity": "Epic",
                 "value": 2500,
                 "weight": 1.0,
-                "description": "A cloak woven from shadows. "
-                             "Makes the wearer harder to detect.",
+                "description": "A cloak woven from shadows.",
                 "slot": "chest",
                 "defense": 8,
                 "magic_defense": 15,
@@ -242,7 +393,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "level_required": 10,
                 "special_effects": ["Stealth +20%", "Shadow Meld ability"]
             },
-            
             "crown_of_wisdom": {
                 "name": "Crown of Wisdom",
                 "item_type": "armor",
@@ -257,8 +407,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "level_required": 15,
                 "special_effects": ["MP Regeneration +5", "Spell Power +15%"]
             },
-            
-            # Rare Armor
             "leather_vest": {
                 "name": "Reinforced Leather Vest",
                 "item_type": "armor",
@@ -270,13 +418,26 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "defense": 12,
                 "magic_defense": 5,
                 "level_required": 5
+            },
+            "mage_robes": {
+                "name": "Archmage Robes",
+                "item_type": "armor",
+                "rarity": "Epic",
+                "value": 2800,
+                "weight": 1.0,
+                "description": "Robes worn by master spellcasters.",
+                "slot": "chest",
+                "defense": 6,
+                "magic_defense": 25,
+                "stat_bonuses": {"intelligence": 4, "wisdom": 4},
+                "level_required": 12,
+                "special_effects": ["Spell cost reduction -15%", "Magic find +10%"]
             }
         }
     
     def _get_consumables(self) -> Dict[str, Dict]:
         """New consumables"""
         return {
-            # Epic Consumables
             "elixir_of_power": {
                 "name": "Elixir of Power",
                 "item_type": "consumable",
@@ -287,20 +448,16 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "temporary_effects": [("strength_buff", 10, 5)],
                 "use_message": "You feel immense power flowing through you!"
             },
-            
             "phoenix_feather": {
                 "name": "Phoenix Feather",
                 "item_type": "consumable",
                 "rarity": "Legendary",
                 "value": 2000,
                 "weight": 0.1,
-                "description": "A feather from a phoenix. "
-                             "Automatically revives you upon death once.",
+                "description": "A feather from a phoenix. Automatically revives you once.",
                 "use_message": "The phoenix feather burns with eternal flame.",
                 "special_effects": ["Auto-revive on death"]
             },
-            
-            # Rare Consumables
             "mega_potion": {
                 "name": "Mega Potion",
                 "item_type": "consumable",
@@ -312,7 +469,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "mp_restore": 75,
                 "use_message": "You feel completely revitalized!"
             },
-            
             "antidote_plus": {
                 "name": "Greater Antidote",
                 "item_type": "consumable",
@@ -323,8 +479,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "effects": ["cure_poison", "poison_resistance_5_turns"],
                 "use_message": "The antidote cleanses your system."
             },
-            
-            # Common Consumables
             "ration": {
                 "name": "Travel Ration",
                 "item_type": "consumable",
@@ -334,13 +488,22 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "description": "Dried meat and bread for traveling.",
                 "hp_restore": 15,
                 "use_message": "You eat the travel ration."
+            },
+            "mana_crystal": {
+                "name": "Mana Crystal",
+                "item_type": "consumable",
+                "rarity": "Rare",
+                "value": 250,
+                "weight": 0.1,
+                "description": "A crystal that restores magical energy.",
+                "mp_restore": 100,
+                "use_message": "The crystal dissolves, flooding you with mana!"
             }
         }
     
     def _get_accessories(self) -> Dict[str, Dict]:
         """New accessories"""
         return {
-            # Epic Accessories
             "ring_of_shadows": {
                 "name": "Ring of Shadows",
                 "item_type": "accessory",
@@ -352,7 +515,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "special_effects": ["Critical Damage +15%", "Evasion +10%"],
                 "level_required": 12
             },
-            
             "amulet_of_the_mage": {
                 "name": "Amulet of the Mage",
                 "item_type": "accessory",
@@ -364,8 +526,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "special_effects": ["Magic Power +25%", "MP Regeneration +5"],
                 "level_required": 10
             },
-            
-            # Rare Accessories
             "warrior_pendant": {
                 "name": "Warrior's Pendant",
                 "item_type": "accessory",
@@ -376,7 +536,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "stat_bonuses": {"strength": 3, "constitution": 2},
                 "level_required": 5
             },
-            
             "lucky_coin": {
                 "name": "Lucky Coin",
                 "item_type": "accessory",
@@ -387,6 +546,17 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "stat_bonuses": {"luck": 5},
                 "special_effects": ["Gold Find +20%", "Item Find +10%"],
                 "level_required": 1
+            },
+            "elemental_ring": {
+                "name": "Ring of Elements",
+                "item_type": "accessory",
+                "rarity": "Epic",
+                "value": 3500,
+                "weight": 0.1,
+                "description": "A ring that channels elemental power.",
+                "stat_bonuses": {"intelligence": 3, "wisdom": 3},
+                "special_effects": ["Elemental damage +15%", "Elemental resistance +10%"],
+                "level_required": 15
             }
         }
     
@@ -401,7 +571,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "weight": 0.5,
                 "description": "A scale from a dragon. Used in legendary crafting."
             },
-            
             "magic_crystal": {
                 "name": "Magic Crystal",
                 "item_type": "material",
@@ -410,7 +579,6 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "weight": 0.1,
                 "description": "A crystal infused with magical energy."
             },
-            
             "enchanted_essence": {
                 "name": "Enchanted Essence",
                 "item_type": "material",
@@ -418,84 +586,99 @@ class ExtendedItemsPlugin(PluginBase, IContentProvider, IHotReloadablePlugin):
                 "value": 300,
                 "weight": 0.1,
                 "description": "Pure magical essence extracted from powerful items."
+            },
+            "iron_ingot": {
+                "name": "Iron Ingot",
+                "item_type": "material",
+                "rarity": "Common",
+                "value": 20,
+                "weight": 1.0,
+                "description": "A refined iron ingot for crafting."
+            },
+            "leather_hide": {
+                "name": "Leather Hide",
+                "item_type": "material",
+                "rarity": "Common",
+                "value": 15,
+                "weight": 0.5,
+                "description": "Treated leather for armor crafting."
             }
         }
     
-    # =========================================================================
-    # Legacy Support
-    # =========================================================================
-    
-    def register_items(self, item_registry) -> Dict[str, Any]:
-        return self.get_all_items()
-    
-    # =========================================================================
-    # Event Hooks
-    # =========================================================================
-    
-    def register_hooks(self, event_system) -> Dict:
+    def _get_recipes(self) -> Dict[str, Dict]:
+        """Crafting recipes"""
         return {
-            EventType.ITEM_PICKUP: self._on_item_pickup,
-            EventType.ITEM_EQUIP: self._on_item_equip
-        }
-    
-    def _on_item_pickup(self, data):
-        item = data.get("item")
-        player = data.get("player")
-        
-        if item and hasattr(item, 'rarity'):
-            if item.rarity == Rarity.LEGENDARY:
-                print(f"🌟 LEGENDARY item found: {item.name}!")
-            elif item.rarity == Rarity.EPIC:
-                print(f"✨ Epic item discovered: {item.name}!")
-        
-        return None
-    
-    def _on_item_equip(self, data):
-        item = data.get("item")
-        player = data.get("player")
-        
-        if item and hasattr(item, 'special_effects'):
-            effects = item.special_effects
-            if effects:
-                print(f"  Special effects: {', '.join(effects)}")
-        
-        return None
-    
-    # =========================================================================
-    # Commands
-    # =========================================================================
-    
-    def register_commands(self, command_system) -> Dict:
-        return {
-            "item_list": {
-                "handler": self._cmd_list,
-                "help": "List extended items",
-                "category": "info"
+            "thunder_hammer_recipe": {
+                "name": "Thunder Hammer Recipe",
+                "category": "weapons",
+                "result": "thunder_hammer",
+                "result_quantity": 1,
+                "ingredients": {"iron_ingot": 5, "magic_crystal": 3, "enchanted_essence": 1},
+                "skill_required": "Crafting",
+                "skill_level": 15,
+                "time": 4,
+                "gold_cost": 500,
+                "experience": 100
+            },
+            "shadow_cloak_recipe": {
+                "name": "Shadow Cloak Recipe",
+                "category": "armor",
+                "result": "shadow_cloak",
+                "result_quantity": 1,
+                "ingredients": {"leather_hide": 4, "magic_crystal": 2, "enchanted_essence": 1},
+                "skill_required": "Crafting",
+                "skill_level": 12,
+                "time": 3,
+                "gold_cost": 400,
+                "experience": 80
+            },
+            "mega_potion_recipe": {
+                "name": "Mega Potion Recipe",
+                "category": "alchemy",
+                "result": "mega_potion",
+                "result_quantity": 2,
+                "ingredients": {"magic_crystal": 1, "enchanted_essence": 1},
+                "skill_required": "Alchemy",
+                "skill_level": 8,
+                "time": 1,
+                "gold_cost": 100,
+                "experience": 40
+            },
+            "ring_of_shadows_recipe": {
+                "name": "Ring of Shadows Recipe",
+                "category": "jewelry",
+                "result": "ring_of_shadows",
+                "result_quantity": 1,
+                "ingredients": {"iron_ingot": 2, "magic_crystal": 3, "enchanted_essence": 2},
+                "skill_required": "Crafting",
+                "skill_level": 14,
+                "time": 3,
+                "gold_cost": 600,
+                "experience": 90
+            },
+            "steel_katana_recipe": {
+                "name": "Steel Katana Recipe",
+                "category": "weapons",
+                "result": "steel_katana",
+                "result_quantity": 1,
+                "ingredients": {"iron_ingot": 3, "leather_hide": 1},
+                "skill_required": "Crafting",
+                "skill_level": 6,
+                "time": 2,
+                "gold_cost": 150,
+                "experience": 35
             }
         }
     
-    def _cmd_list(self, game, args, context):
-        items = self.get_all_items()
+    def register_recipes(self, crafting_manager) -> Dict[str, Dict]:
+        """
+        Register crafting recipes provided by this plugin.
         
-        # Group by type
-        by_type = {}
-        for item_id, item_data in items.items():
-            item_type = item_data.get("item_type", "unknown")
-            if item_type not in by_type:
-                by_type[item_type] = []
-            by_type[item_type].append((item_id, item_data))
-        
-        lines = ["Extended Items:", "=" * 50]
-        for item_type, items_list in sorted(by_type.items()):
-            lines.append(f"\n[{item_type.upper()}]")
-            for item_id, item_data in items_list:
-                rarity = item_data.get("rarity", "Common")
-                name = item_data.get("name", item_id)
-                lines.append(f"  • {name} ({rarity})")
-        
-        lines.append(f"\nTotal: {len(items)} items")
-        return "\n".join(lines)
+        Returns:
+            Dict mapping recipe IDs to recipe data
+        """
+        return self._get_recipes()
 
 
-# Plugin instance
+# Plugin instance - REQUIRED
 plugin = ExtendedItemsPlugin()
