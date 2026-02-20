@@ -74,401 +74,349 @@ class ExtendedNPCsPlugin(Plugin):
         }
     
     def _on_npc_interact(self, game, data):
-            return self._get_npcs()
-        elif content_type == "quests":
-            return self._get_quests()
-        return {}
+        """Handle NPC interactions"""
+        npc_id = data.get("npc_id")
+        npcs = self._get_npcs()
+        
+        if npc_id in npcs:
+            npc_data = npcs[npc_id]
+            friendship = data.get("friendship", 0)
+            self._friendship_data[npc_id] = friendship
+            
+            dialogue = npc_data.get("dialogue", {}).get("greeting", {})
+            if friendship >= 150 and "high_friendship" in dialogue:
+                print(f"\n{npc_data['name']}: {dialogue['high_friendship']}")
+            elif friendship >= 50 and "medium_friendship" in dialogue:
+                print(f"\n{npc_data['name']}: {dialogue['medium_friendship']}")
+            elif "low_friendship" in dialogue:
+                print(f"\n{npc_data['name']}: {dialogue['low_friendship']}")
+            
+            services = npc_data.get("services", [])
+            if services:
+                print(f"  Services: {', '.join(services)}")
     
-    # =========================================================================
-    # NPC Definitions
-    # =========================================================================
+    def _on_location_enter(self, game, data):
+        """Show NPCs available in location"""
+        location_id = data.get("location_id")
+        npcs = self._get_npcs()
+        
+        location_npcs = [
+            (npc_id, npc) for npc_id, npc in npcs.items() 
+            if npc.get("location") == location_id
+        ]
+        
+        if location_npcs:
+            print(f"\n[Extended NPCs] Characters in this area:")
+            for npc_id, npc in location_npcs:
+                print(f"  • {npc['name']} ({npc.get('npc_type', 'unknown')})")
+    
+    def _on_level_up(self, game, data):
+        """Notify about new NPCs at level milestones"""
+        level = data.get("level", 1)
+        npcs = self._get_npcs()
+        
+        for npc_id, npc in npcs.items():
+            requires = npc.get("requirements", {})
+            if requires.get("level") == level:
+                print(f"\n[Extended NPCs] A new acquaintance awaits: {npc['name']}!")
+    
+    def _on_quest_complete(self, game, data):
+        """Handle quest completion for friendship"""
+        quest_id = data.get("quest_id")
+        quests = self._get_quests()
+        
+        if quest_id in quests:
+            giver = quests[quest_id].get("giver")
+            if giver:
+                current = self._friendship_data.get(giver, 0)
+                self._friendship_data[giver] = min(current + 25, 200)
+                print(f"  Friendship with {giver} increased!")
+    
+    def register_commands(self, command_system) -> Dict[str, Any]:
+        """Register NPC-related commands."""
+        return {
+            "npcs": {
+                "handler": self._cmd_list_npcs,
+                "help": "List all extended NPCs by location",
+                "category": "info"
+            },
+            "npc_info": {
+                "handler": self._cmd_npc_info,
+                "help": "Show detailed info about an NPC",
+                "usage": "/npc_info <npc_id>",
+                "category": "info"
+            },
+            "friendship": {
+                "handler": self._cmd_friendship,
+                "help": "Check friendship levels with NPCs",
+                "category": "stats"
+            }
+        }
+    
+    def _cmd_list_npcs(self, game, args, context) -> str:
+        """List all NPCs by location"""
+        npcs = self._get_npcs()
+        by_location: Dict[str, List] = {}
+        
+        for npc_id, npc in npcs.items():
+            loc = npc.get("location", "unknown")
+            if loc not in by_location:
+                by_location[loc] = []
+            by_location[loc].append((npc_id, npc))
+        
+        lines = ["Extended NPCs:", "=" * 50]
+        for location, npc_list in sorted(by_location.items()):
+            lines.append(f"\n{location.replace('_', ' ').title()}:")
+            for npc_id, npc in npc_list:
+                npc_type = npc.get("npc_type", "unknown")
+                lines.append(f"  • {npc['name']} ({npc_type})")
+        
+        return "\n".join(lines)
+    
+    def _cmd_npc_info(self, game, args, context) -> str:
+        """Show detailed NPC information"""
+        if not args:
+            return "Usage: /npc_info <npc_id>"
+        
+        npc_id = args[0].lower()
+        npcs = self._get_npcs()
+        
+        if npc_id not in npcs:
+            return f"NPC '{npc_id}' not found."
+        
+        npc = npcs[npc_id]
+        lines = [
+            f"NPC: {npc['name']}",
+            f"Type: {npc.get('npc_type', 'Unknown')}",
+            f"Location: {npc.get('location', 'Unknown')}",
+            f"",
+            f"Description: {npc['description']}"
+        ]
+        
+        if "services" in npc:
+            lines.append(f"Services: {', '.join(npc['services'])}")
+        
+        if "can_train" in npc:
+            lines.append(f"Train: {', '.join(npc['can_train'])}")
+        
+        return "\n".join(lines)
+    
+    def _cmd_friendship(self, game, args, context) -> str:
+        """Show friendship levels"""
+        if not self._friendship_data:
+            return "No friendships established yet."
+        
+        lines = ["NPC Friendships:", "=" * 50]
+        npcs = self._get_npcs()
+        
+        for npc_id, level in sorted(self._friendship_data.items(), key=lambda x: -x[1]):
+            npc_name = npcs.get(npc_id, {}).get("name", npc_id)
+            lines.append(f"{npc_name:25} {level}/200")
+        
+        return "\n".join(lines)
+    
+    def get_new_npcs(self) -> Dict[str, Dict]:
+        """Return new NPCs."""
+        return self._get_npcs()
+    
+    def get_new_quests(self) -> Dict[str, Dict]:
+        """Return new quests."""
+        return self._get_quests()
     
     def _get_npcs(self) -> Dict[str, Dict]:
+        """Get all NPC definitions"""
         return {
-            # =========================================================================
-            # CAPITAL CITY NPCs
-            # =========================================================================
-            
             "master_blacksmith_bjorn": {
                 "name": "Master Blacksmith Bjorn",
-                "description": "A legendary dwarven blacksmith with arms like tree trunks. "
-                             "His forge has crafted weapons for kings and heroes for over 200 years.",
+                "description": "A legendary dwarven blacksmith. His forge has crafted weapons for kings.",
                 "npc_type": "blacksmith",
                 "location": "capital_city",
-                "shop_items": [
-                    "steel_greatsword", "plate_armor", "chainmail"
-                ],
-                "services": ["craft", "repair", "enchant", "identify"],
-                "buy_multiplier": 1.3,
-                "sell_multiplier": 0.6,
-                "friendship_max": 200,
-                "friendship_rewards": {
-                    50: "10% discount on all services",
-                    100: "Access to legendary crafting recipes",
-                    150: "Free weapon sharpening",
-                    200: "Masterwork enhancement service"
-                },
+                "services": ["craft", "repair", "enchant"],
                 "can_train": ["Crafting", "Swordsmanship"],
                 "training_cost": 300,
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"State your business. I've got work to do.\"",
-                        "medium_friendship": "\"Ah, back again? Let me see what you need.\"",
-                        "high_friendship": "\"My friend! Come, let me show you my latest work!\""
+                        "low_friendship": "\"State your business.\"",
+                        "medium_friendship": "\"Back again?\"",
+                        "high_friendship": "\"My friend!\""
                     }
                 }
             },
-            
             "grand_magister_elara": {
                 "name": "Grand Magister Elara",
-                "description": "The head of the Arcane University. Her eyes shimmer with contained "
-                             "magical energy, and ancient runes float around her fingertips.",
+                "description": "The head of the Arcane University.",
                 "npc_type": "trainer",
                 "location": "capital_city",
-                "shop_items": [
-                    "mana_potion", "magic_crystal", "frost_staff"
-                ],
-                "services": ["train_magic", "identify", "enchant", "teleport"],
-                "buy_multiplier": 1.5,
-                "sell_multiplier": 0.5,
-                "friendship_max": 200,
+                "services": ["train_magic", "identify", "enchant"],
                 "can_train": ["Magic"],
                 "training_cost": 800,
-                "special_abilities": {
-                    "teleport": {
-                        "description": "Teleport to any discovered location",
-                        "cost": 100,
-                        "requires_friendship": 50
-                    }
-                },
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"You seek knowledge? The Arcane University welcomes all.\"",
-                        "medium_friendship": "\"Ah, student of the arcane. Your aura grows stronger.\"",
-                        "high_friendship": "\"My dearest pupil! I have something special for you.\""
+                        "low_friendship": "\"You seek knowledge?\"",
+                        "medium_friendship": "\"Your aura grows stronger.\"",
+                        "high_friendship": "\"Dear pupil!\""
                     }
                 }
             },
-            
             "arena_master_ragnor": {
                 "name": "Arena Master Ragnor",
-                "description": "A scarred veteran of a thousand battles who runs the Arena. "
-                             "His missing eye tells tales of battles won.",
+                "description": "A scarred veteran who runs the Arena.",
                 "npc_type": "trainer",
                 "location": "capital_city",
-                "services": ["arena_battles", "training", "betting"],
+                "services": ["arena_battles", "training"],
                 "can_train": ["Swordsmanship", "Stealth"],
                 "training_cost": 200,
-                "arena_levels": [
-                    {"name": "Novice Pit", "min_level": 1, 
-                     "enemies": ["goblin", "wolf"], "reward_gold": 50, "reward_exp": 25},
-                    {"name": "Warrior's Gauntlet", "min_level": 5,
-                     "enemies": ["orc_warrior", "skeleton"], "reward_gold": 150, "reward_exp": 75},
-                    {"name": "Champion's Arena", "min_level": 10,
-                     "enemies": ["troll", "dark_mage"], "reward_gold": 400, "reward_exp": 200}
-                ],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Looking for glory? Step forward and prove yourself!\"",
-                        "medium_friendship": "\"The crowd loves you, fighter. Keep winning.\"",
-                        "high_friendship": "\"Champion! The arena hasn't seen your like in decades!\""
+                        "low_friendship": "\"Looking for glory?\"",
+                        "high_friendship": "\"Champion!\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # WILLOWBROOK VILLAGE NPCs
-            # =========================================================================
-            
             "old_sage_merlin": {
                 "name": "Old Sage Merlin",
-                "description": "An elderly man with a beard reaching his waist. "
-                             "He sits beneath the ancient oak, offering wisdom.",
+                "description": "An elderly man offering wisdom beneath the ancient oak.",
                 "npc_type": "quest_giver",
                 "location": "start_village",
-                "services": ["prophecy", "wisdom", "identify"],
-                "friendship_max": 150,
-                "prophecies": [
-                    {
-                        "id": "hero_path",
-                        "text": "I see a great destiny before you. Darkness gathers in the east...",
-                        "requires": {"level": 5}
-                    }
-                ],
+                "services": ["prophecy", "wisdom"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Come closer, young one. The wind carries whispers.\"",
-                        "medium_friendship": "\"Ah, you return. The stars foretold this meeting.\"",
-                        "high_friendship": "\"My old friend! Your destiny unfolds beautifully.\""
+                        "low_friendship": "\"Come closer, young one.\""
                     }
                 }
             },
-            
             "huntress_lyra": {
                 "name": "Huntress Lyra",
-                "description": "A skilled ranger with a bow always at her back. "
-                             "She knows the forest better than anyone.",
+                "description": "A skilled ranger who knows the forest.",
                 "npc_type": "trainer",
                 "location": "start_village",
-                "services": ["hunting_tips", "guide", "training"],
+                "services": ["guide", "training"],
                 "can_train": ["Survival", "Stealth"],
                 "training_cost": 100,
-                "guide_services": {
-                    "whispering_woods": {"cost": 0},
-                    "deep_forest": {"cost": 50}
-                },
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Looking for a guide? I know every trail.\"",
-                        "medium_friendship": "\"Friend of the forest! What game do you hunt?\"",
-                        "high_friendship": "\"My trusted companion! The wilderness calls to us.\""
+                        "low_friendship": "\"Looking for a guide?\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # MINING TOWN NPCs
-            # =========================================================================
-            
             "gem_trader_sapphire": {
                 "name": "Sapphire the Gem Trader",
-                "description": "An elegant woman with deep blue eyes that match her namesake. "
-                             "Her cart overflows with gems and jewelry.",
+                "description": "An elegant woman with gems and jewelry.",
                 "npc_type": "merchant",
                 "location": "mining_town",
-                "shop_items": [
-                    "silver_ring", "ruby_amulet", "lucky_coin"
-                ],
-                "services": ["appraise", "trade", "craft_jewelry"],
-                "buy_multiplier": 1.2,
-                "sell_multiplier": 0.7,
-                "friendship_max": 100,
+                "services": ["trade", "appraise"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Welcome! The finest gems in the realm.\"",
-                        "medium_friendship": "\"Ah, a connoisseur! I have something special.\"",
-                        "high_friendship": "\"My favorite customer! I saved my best for you.\""
+                        "low_friendship": "\"Welcome!\""
                     }
                 }
             },
-            
             "mine_foreman_gimli": {
                 "name": "Foreman Gimli",
-                "description": "A stout dwarf with a braided beard and permanent squint. "
-                             "He knows every tunnel in the mines.",
+                "description": "A stout dwarf who knows every tunnel in the mines.",
                 "npc_type": "quest_giver",
                 "location": "mining_town",
-                "services": ["mining_jobs", "equipment_rental"],
-                "mining_jobs": [
-                    {
-                        "id": "iron_run",
-                        "name": "Iron Ore Collection",
-                        "reward_gold": 30,
-                        "reward_exp": 15
-                    },
-                    {
-                        "id": "deep_delve",
-                        "name": "Deep Mine Expedition",
-                        "requires_level": 5,
-                        "reward_gold": 100,
-                        "reward_exp": 50
-                    }
-                ],
+                "services": ["mining_jobs"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Looking for work? The mines always need workers.\"",
-                        "medium_friendship": "\"Good to see you, friend!\"",
-                        "high_friendship": "\"Partner! I've got a lead on something big.\""
+                        "low_friendship": "\"Looking for work?\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # CROSSROADS NPCs
-            # =========================================================================
-            
             "wandering_merchant_zephyr": {
                 "name": "Zephyr the Wandering Merchant",
-                "description": "A mysterious merchant whose cart appears in different locations. "
-                             "His goods are exotic and rare.",
+                "description": "A mysterious merchant with exotic goods.",
                 "npc_type": "merchant",
                 "location": "crossroads",
-                "shop_items": [
-                    "mega_potion", "elixir_of_power", "phoenix_feather"
-                ],
-                "services": ["trade", "information", "rare_goods"],
-                "buy_multiplier": 1.5,
-                "sell_multiplier": 0.8,
-                "friendship_max": 200,
+                "services": ["trade", "rare_goods"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Ah, a traveler! Wares from distant lands.\"",
-                        "medium_friendship": "\"My friend! I kept this special item for you.\"",
-                        "high_friendship": "\"Ah! Something extraordinary for my best customer.\""
+                        "low_friendship": "\"Ah, a traveler!\""
                     }
                 }
             },
-            
             "fortune_teller_mystique": {
                 "name": "Madame Mystique",
-                "description": "An enigmatic woman with a silk scarf and crystal ball. "
-                             "Incense smoke curls around her.",
+                "description": "An enigmatic woman with a crystal ball.",
                 "npc_type": "mysterious",
                 "location": "crossroads",
-                "services": ["fortune", "curse_removal", "blessing"],
-                "friendship_max": 100,
-                "fortune_prices": {
-                    "basic": {"cost": 50, "description": "A glimpse of your near future"},
-                    "detailed": {"cost": 200, "description": "Detailed reading with advice"}
-                },
+                "services": ["fortune", "blessing"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Come, let the cards reveal your path... for a price.\"",
-                        "medium_friendship": "\"The stars told me you would come.\"",
-                        "high_friendship": "\"My dear! The spirits have much to show you.\""
+                        "low_friendship": "\"Come, let the cards reveal your path...\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # FAIRY GROVE NPC
-            # =========================================================================
-            
             "fairy_princess_aurora": {
                 "name": "Princess Aurora of the Fae",
-                "description": "A radiant fairy with wings like stained glass. "
-                             "Her tiny crown glows with inner light.",
+                "description": "A radiant fairy with wings like stained glass.",
                 "npc_type": "quest_giver",
                 "location": "fairy_grove",
-                "services": ["fairy_blessing", "enchant", "wish"],
-                "friendship_max": 200,
-                "blessing_types": [
-                    {"name": "Luck of the Fae", "effect": "luck", "bonus": 5, "duration": 10}
-                ],
+                "services": ["fairy_blessing", "enchant"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"A mortal! How delightful!\"",
-                        "medium_friendship": "\"My mortal friend! The grove brightens.\"",
-                        "high_friendship": "\"Chosen one of the Fae! Name your desire.\""
+                        "low_friendship": "\"A mortal! How delightful!\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # ANCIENT TEMPLE NPC
-            # =========================================================================
-            
             "temple_guardian_spirit": {
                 "name": "Temple Guardian Spirit",
-                "description": "A translucent figure wreathed in ethereal light. "
-                             "Ancient armor floats on its spectral form.",
+                "description": "A translucent figure wreathed in ethereal light.",
                 "npc_type": "mysterious",
                 "location": "ancient_temple",
-                "services": ["temple_trials", "ancient_wisdom", "blessing"],
-                "friendship_max": 100,
-                "temple_trials": [
-                    {
-                        "name": "Trial of Strength",
-                        "description": "Defeat the temple guardians",
-                        "enemies": ["temple_guardian", "temple_guardian"]
-                    }
-                ],
+                "services": ["temple_trials", "blessing"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Mortal... prove your worth.\"",
-                        "medium_friendship": "\"Seeker of ancient knowledge.\"",
-                        "high_friendship": "\"Champion of the Temple.\""
+                        "low_friendship": "\"Mortal... prove your worth.\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # DRAGON'S PEAK NPC
-            # =========================================================================
-            
             "dragon_scholar_ignis": {
                 "name": "Ignis the Dragon Scholar",
-                "description": "An elderly scholar who has dedicated his life to studying dragons. "
-                             "His robes are singed from close encounters.",
+                "description": "An elderly scholar who studies dragons.",
                 "npc_type": "quest_giver",
                 "location": "dragon_peak",
-                "services": ["dragon_lore", "dragon_preparation", "identify_dragon_items"],
-                "friendship_max": 150,
-                "dragon_preparation": {
-                    "fire_resistance_potion": {"cost": 500, "effect": "fire_resistance"}
-                },
+                "services": ["dragon_lore", "preparation"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"Foolish mortal! Dragons are not to be trifled with.\"",
-                        "medium_friendship": "\"You still live? Impressive.\"",
-                        "high_friendship": "\"Dragon-slayer in training! I will share all I know.\""
+                        "low_friendship": "\"Foolish mortal!\"",
+                        "high_friendship": "\"Dragon-slayer!\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # DESERT NPC
-            # =========================================================================
-            
             "nomad_chief_khalid": {
                 "name": "Chief Khalid of the Sandrunners",
-                "description": "A weathered desert warrior with a curved scimitar. "
-                             "His eyes are sharp from years of scanning dunes.",
+                "description": "A weathered desert warrior.",
                 "npc_type": "quest_giver",
                 "location": "desert_border",
-                "services": ["guide", "trade", "shelter"],
-                "friendship_max": 150,
-                "guide_services": {
-                    "desert_crossing": {"cost": 100},
-                    "oasis_locations": {"cost": 50}
-                },
+                "services": ["guide", "trade"],
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"The desert takes the unprepared. What do you seek?\"",
-                        "medium_friendship": "\"Friend of the Sandrunners!\"",
-                        "high_friendship": "\"My brother of the sands!\""
+                        "low_friendship": "\"The desert takes the unprepared.\""
                     }
                 }
             },
-            
-            # =========================================================================
-            # SPECIAL SECRET NPC
-            # =========================================================================
-            
             "mysterious_hermit": {
                 "name": "The Eternal Hermit",
-                "description": "A figure wrapped in shadow and mystery. "
-                             "They appear only to those who have proven themselves.",
+                "description": "A figure wrapped in shadow and mystery.",
                 "npc_type": "mysterious",
                 "location": "deep_forest",
                 "services": ["class_advancement", "legendary_quest"],
-                "friendship_max": 300,
-                "requirements": {
-                    "min_level": 20,
-                    "required_quests": ["main_004"]
-                },
-                "class_advancement": {
-                    "Warrior": {"new_class": "Warlord", "bonus": {"strength": 5}},
-                    "Mage": {"new_class": "Archmage", "bonus": {"intelligence": 5}},
-                    "Rogue": {"new_class": "Shadow Lord", "bonus": {"dexterity": 5}}
-                },
+                "requirements": {"level": 20},
                 "dialogue": {
                     "greeting": {
-                        "low_friendship": "\"...You see me. Few do.\"",
-                        "medium_friendship": "\"The threads of fate weave around you.\"",
-                        "high_friendship": "\"Chosen one. I have waited centuries.\""
+                        "low_friendship": "\"...You see me. Few do.\""
                     }
                 }
             }
         }
     
     def _get_quests(self) -> Dict[str, Dict]:
-        """Quests provided by these NPCs"""
+        """Get all quest definitions"""
         return {
             "artifact_recovery": {
                 "name": "The Arcane Artifact",
-                "description": "Grand Magister Elara senses a powerful artifact. "
-                              "Recover it from the Temple of the Forgotten God.",
+                "description": "Recover a powerful artifact from the Ancient Temple.",
                 "quest_type": "side",
                 "giver": "grand_magister_elara",
                 "location": "capital_city",
@@ -477,134 +425,68 @@ class ExtendedNPCsPlugin(Plugin):
                     {"type": "reach", "target": "ancient_temple", "required": 1,
                      "description": "Reach the Ancient Temple"},
                     {"type": "defeat_boss", "target": "forgotten_priest", "required": 1,
-                     "description": "Defeat the Forgotten Priest"},
-                    {"type": "talk", "target": "grand_magister_elara", "required": 1,
-                     "description": "Return to Grand Magister Elara"}
+                     "description": "Defeat the Forgotten Priest"}
                 ],
                 "rewards": {
                     "experience": 1500,
                     "gold": 800,
-                    "items": ["magic_crystal"],
-                    "skill_exp": {"Magic": 100}
+                    "items": ["magic_crystal"]
                 }
             },
             "dragon_preparation": {
                 "name": "Preparing for the Dragon",
-                "description": "Ignis helps you prepare for battle with the Ancient Dragon.",
+                "description": "Prepare for battle with the Ancient Dragon.",
                 "quest_type": "boss",
                 "giver": "dragon_scholar_ignis",
                 "location": "dragon_peak",
                 "level_required": 20,
                 "objectives": [
                     {"type": "collect", "target": "dragon_scale", "required": 5,
-                     "description": "Collect dragon scales"},
-                    {"type": "talk", "target": "dragon_scholar_ignis", "required": 1,
-                     "description": "Learn dragon weaknesses"}
+                     "description": "Collect dragon scales"}
                 ],
                 "rewards": {
                     "experience": 2000,
                     "gold": 1500,
                     "stat_bonus": {"strength": 2, "constitution": 2}
                 }
-            }
-        }
-    
-    # =========================================================================
-    # Legacy Support
-    # =========================================================================
-    
-    def get_new_npcs(self) -> Dict[str, Dict]:
-        return self._get_npcs()
-    
-    def get_new_quests(self) -> Dict[str, Dict]:
-        return self._get_quests()
-    
-    # =========================================================================
-    # Event Hooks
-    # =========================================================================
-    
-    def register_hooks(self, event_system) -> Dict:
-        return {
-            EventType.NPC_INTERACT: (self._on_npc_interact, EventPriority.NORMAL),
-            EventType.LOCATION_ENTER: (self._on_location_enter, EventPriority.LOW),
-            EventType.PLAYER_LEVEL_UP: self._on_level_up
-        }
-    
-    def _on_npc_interact(self, data):
-        npc_id = data.get("npc_id")
-        npcs = self._get_npcs()
-        
-        if npc_id in npcs:
-            npc_data = npcs[npc_id]
-            friendship = data.get("friendship", 0)
-            print(f"[Extended NPCs] Interacting with {npc_data['name']}")
-        
-        return None
-    
-    def _on_location_enter(self, data):
-        location_id = data.get("location_id")
-        npcs = self._get_npcs()
-        
-        location_npcs = [npc for npc in npcs.values() if npc.get("location") == location_id]
-        
-        if location_npcs:
-            print(f"\n[Extended NPCs] NPCs available here:")
-            for npc in location_npcs:
-                print(f"  • {npc['name']}")
-        
-        return None
-    
-    def _on_level_up(self, data):
-        player = data.get("player")
-        level = data.get("level", 1)
-        
-        npcs = self._get_npcs()
-        for npc_id, npc in npcs.items():
-            if npc.get("requires_level") == level:
-                print(f"\n[Extended NPCs] A new acquaintance awaits: {npc['name']}!")
-        
-        return None
-    
-    # =========================================================================
-    # Commands
-    # =========================================================================
-    
-    def register_commands(self, command_system) -> Dict:
-        return {
-            "npcs": {
-                "handler": self._cmd_list_npcs,
-                "help": "List extended NPCs",
-                "category": "info"
             },
-            "friendship": {
-                "handler": self._cmd_friendship,
-                "help": "Check friendship levels",
-                "category": "info"
+            "mining_expedition": {
+                "name": "Deep Mine Expedition",
+                "description": "Explore the Crystal Caverns for the foreman.",
+                "quest_type": "side",
+                "giver": "mine_foreman_gimli",
+                "location": "mining_town",
+                "level_required": 5,
+                "objectives": [
+                    {"type": "reach", "target": "crystal_caverns", "required": 1,
+                     "description": "Explore the Crystal Caverns"},
+                    {"type": "collect", "target": "magic_crystal", "required": 10,
+                     "description": "Gather magic crystals"}
+                ],
+                "rewards": {
+                    "experience": 800,
+                    "gold": 500
+                }
+            },
+            "fairy_favor": {
+                "name": "The Fae's Favor",
+                "description": "Help the fairy princess recover stolen treasure.",
+                "quest_type": "side",
+                "giver": "fairy_princess_aurora",
+                "location": "fairy_grove",
+                "level_required": 8,
+                "objectives": [
+                    {"type": "kill", "target": "goblin", "required": 5,
+                     "description": "Defeat goblin thieves"}
+                ],
+                "rewards": {
+                    "experience": 1000,
+                    "gold": 400,
+                    "stat_bonus": {"luck": 1}
+                }
             }
         }
-    
-    def _cmd_list_npcs(self, game, args, context):
-        npcs = self._get_npcs()
-        
-        # Group by location
-        by_location = {}
-        for npc_id, npc in npcs.items():
-            loc = npc.get("location", "unknown")
-            if loc not in by_location:
-                by_location[loc] = []
-            by_location[loc].append(npc)
-        
-        lines = ["Extended NPCs:", "=" * 50]
-        for location, npc_list in sorted(by_location.items()):
-            lines.append(f"\n{location.replace('_', ' ').title()}:")
-            for npc in npc_list:
-                lines.append(f"  • {npc['name']} ({npc['npc_type']})")
-        
-        return "\n".join(lines)
-    
-    def _cmd_friendship(self, game, args, context):
-        return "Friendship tracking coming soon!"
 
 
-# Plugin instance
+# Plugin instance - REQUIRED
 plugin = ExtendedNPCsPlugin()
