@@ -7,7 +7,7 @@ Version: 1.0.0
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, Any, Tuple,  TYPE_CHECKING
 from enum import Enum
 import sys
 import os
