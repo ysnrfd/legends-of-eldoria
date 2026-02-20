@@ -259,11 +259,18 @@ class PluginManager:
         try:
             # Use unique module name based on filename to avoid import caching issues
             module_name = os.path.basename(path)[:-3]  # Remove .py extension
+            
+            # Create the spec
             spec = importlib.util.spec_from_file_location(module_name, path)
             if not spec or not spec.loader:
                 return None
             
+            # Create and register module in sys.modules before executing
+            # This is required for dataclasses to work properly
             module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            
+            # Execute the module
             spec.loader.exec_module(module)
             
             # Look for plugin instance
