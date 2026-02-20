@@ -8,9 +8,7 @@
 
 A fully-featured, open-world text-based RPG game with a powerful dynamic plugin architecture.
 
-> **No ownership claims allowed**
-> |
-> **Free for development and expansion**
+> **No ownership claims allowed** | **Free for development and expansion**
 
 ## 📚 Documentation
 
