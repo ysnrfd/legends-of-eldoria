@@ -2,7 +2,6 @@
 """
 LEGENDS OF ELDORIA
 A Complete Text-Based RPG Game
-Version: 1.0.0
 
 Features:
 - Open World Exploration
@@ -19,6 +18,7 @@ Features:
 - Inventory Management
 
 Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations
