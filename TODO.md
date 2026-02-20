@@ -10,7 +10,8 @@
 
 - [x] 5. Rewrite `extended_items.py` - Add recipes and enhanced features
 
-- [ ] 6. Rewrite `extended_npcs.py` - Add complete quest provider support
+- [x] 6. Rewrite `extended_npcs.py` - Add complete quest provider support
+
 - [ ] 7. Rewrite `extended_world.py` - Add complete location provider support
 - [ ] 8. Update `json_plugin_template.json` - Ensure compatibility
 - [ ] 9. Update `README.md` - Fix documentation
