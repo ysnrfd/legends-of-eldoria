@@ -1,3 +1,34 @@
+# Save/Load Bug Fix - COMPLETED ✅
+
+## Issue
+Error loading save: `'dict' object has no attribute 'update_quest_availability'`
+
+## Root Cause
+Key mismatch between saving and loading:
+- When saving: game used key `"quests"` (main.py line 275)
+- When loading: deserializer only checked for `"quest_manager"` (save_load.py line 102)
+- Result: raw dictionary returned instead of QuestManager object
+
+## Fix Applied
+Updated `rpg_game/systems/save_load.py` to handle both keys:
+```python
+elif key == "quest_manager" and value:
+    deserialized[key] = QuestManager.from_dict(value)
+elif key == "quests" and value:
+    deserialized[key] = QuestManager.from_dict(value)
+```
+
+## Files Modified
+- [x] `rpg_game/systems/save_load.py` - Added support for both `"quest_manager"` and `"quests"` keys
+
+## Testing Status
+- [ ] Load existing save files (backward compatibility)
+- [ ] Create new save files
+- [ ] Load newly created saves
+- [ ] Verify quest system functionality after loading
+
+---
+
 # README Update Task - COMPLETED ✅
 
 ## Plan
