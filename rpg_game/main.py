@@ -280,9 +280,9 @@ class Game:
         self.start_time = time.time()
         
         game_state = {
-            "player": self.player.to_dict(),
-            "world": self.world.to_dict(),
-            "quests": self.quest_manager.to_dict(),
+            "player": self.player,
+            "world": self.world,
+            "quests": self.quest_manager,
             "play_time": self.play_time
         }
         
