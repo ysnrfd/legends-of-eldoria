@@ -5,7 +5,7 @@ Demonstrates comprehensive world building with dynamic features.
 
 from __future__ import annotations
 from systems.plugins import Plugin, PluginInfo, PluginPriority, EventType
-from core.engine import Rarity, Weather, TimeOfDay
+from core.engine import Weather, TimeOfDay
 from typing import Dict, List, Any
 from dataclasses import dataclass, field
 import random

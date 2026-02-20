@@ -11,7 +11,7 @@ import os
 import random
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.engine import EventType, Rarity, StatType
+from core.engine import StatType
 
 if TYPE_CHECKING:
     from core.character import Character

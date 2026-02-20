@@ -24,26 +24,15 @@ A fully dynamic, extensible plugin system supporting:
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import (
-    Dict, List, Tuple, Optional, Any, Callable, Type, TypeVar, Generic,
-    Protocol, runtime_checkable, Union, Set, Iterator, Awaitable
+    Dict, List, Tuple, Optional, Any, Callable, Union
 )
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from contextlib import contextmanager
-from pathlib import Path
 import os
 import sys
-import json
 import importlib.util
-import inspect
-import hashlib
 import threading
-import asyncio
-import time
-import copy
-import weakref
 from collections import defaultdict
-from functools import wraps, lru_cache
 import logging
 
 # Setup logging
@@ -403,8 +392,40 @@ class PluginManager:
             return False, f"Unknown command: {command}"
         
         try:
-            result = self._commands[command](*args, **kwargs)
+            # Create a context dictionary to pass to command handlers
+            context = {
+                "plugin_manager": self,
+                "game": self.game if args else None,
+                "timestamp": None
+            }
+            
+            # Call the command handler with game, args, and context
+            # The handler signature is: handler(game, args, context)
+            handler = self._commands[command]
+            
+            # Check if handler is a bound method (has self as first arg)
+            # or a regular function
+            if len(args) >= 2:
+                # args contains (game, args_list)
+                game = args[0]
+                cmd_args = args[1] if len(args) > 1 else []
+                result = handler(game, cmd_args, context)
+            elif len(args) == 1:
+                # Only game passed
+                game = args[0]
+                result = handler(game, [], context)
+            else:
+                # No args passed
+                result = handler(None, [], context)
+            
             return True, result
+        except TypeError as e:
+            # Check if it's the specific error about missing context argument
+            if "missing 1 required positional argument: 'context'" in str(e):
+                logger.error(f"Error executing command {command}: Command handler missing 'context' argument. Please update the plugin to accept context parameter.")
+                return False, f"Error: Command {command} handler has incorrect signature. Expected: handler(game, args, context)"
+            logger.error(f"Error executing command {command}: {e}")
+            return False, str(e)
         except Exception as e:
             logger.error(f"Error executing command {command}: {e}")
             return False, str(e)
