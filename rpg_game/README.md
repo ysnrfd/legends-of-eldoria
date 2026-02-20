@@ -1,4 +1,4 @@
-# LEGENDS OF ELDORIA - Complete Text-Based RPG
+# LEGENDS OF ELDORIA - Game Documentation
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.8%2B-green)
@@ -12,6 +12,8 @@ A fully-featured, open-world text-based RPG game with a powerful dynamic plugin 
 > |
 > **Free for development and expansion**
 
+📚 For project overview and contribution guidelines, see the [root README.md](../README.md)
+
 ---
 
 ## 📑 Table of Contents
@@ -22,9 +24,8 @@ A fully-featured, open-world text-based RPG game with a powerful dynamic plugin 
 - [Character Classes](#character-classes)
 - [World Locations](#world-locations)
 - [Plugin System](#plugin-system)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+- [Game Structure](#game-structure)
+- [Game Tips](#game-tips)
 
 ---
 

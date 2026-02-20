@@ -1,8 +1,17 @@
-# Legends of Eldoria - Plugin Development Guide
+# LEGENDS OF ELDORIA - Plugin Development Guide
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Python](https://img.shields.io/badge/python-3.8%2B-green)
+![License](https://img.shields.io/badge/license-Open%20Development-green)
+
+**Creator:** YSNRFD | **GitHub:** [github.com/ysnrfd](https://github.com/ysnrfd)
 
 ## Overview
 
 The Legends of Eldoria plugin system allows you to extend the game with new content, features, and mechanics without modifying the core game code.
+
+📚 For game documentation, see [../README.md](../README.md)  
+📚 For project overview, see [../../README.md](../../README.md)
 
 ### What Plugins Can Add
 
@@ -426,6 +435,13 @@ For simple content-only plugins, you can use JSON format:
 - Check that handler functions accept `(game, data)` parameters
 - Verify you're using the correct EventType from `core.engine`
 
+
 ---
 
-*Legends of Eldoria Plugin System | © 2026 YSNRFD*
+<div align="center">
+
+**Legends of Eldoria Plugin System** 🔌
+
+Made with ❤️ by [YSNRFD](https://github.com/ysnrfd)
+
+</div>

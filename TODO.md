@@ -1,37 +1,38 @@
-# Plugin Rewrite TODO
+# README Update Task - COMPLETED ✅
 
-## Tasks
+## Plan
+- [x] 1. Update Root README.md - Focus on project-level information
+- [x] 2. Update rpg_game/README.md - Focus on game-specific content
+- [x] 3. Update rpg_game/plugins/README.md - Minor improvements and consistency
 
-- [x] 1. Analyze existing plugin system and all plugin files
-- [x] 2. Rewrite `base_plugin_template.py` - Fix incompatible API references
-- [x] 3. Rewrite `help_plugin.py` - Add enhanced features
+## Progress
+- [x] Root README.md updated
+- [x] rpg_game/README.md updated
+- [x] plugins/README.md updated
+- [x] All internal links verified
 
-- [x] 4. Rewrite `enhanced_combat.py` - Add complete content provider support
+## Summary of Changes
 
-- [x] 5. Rewrite `extended_items.py` - Add recipes and enhanced features
+### Root README.md
+- Changed title to "Open Source Text-Based RPG"
+- Added documentation links table
+- Simplified table of contents
+- Added "Overview" section
+- Condensed features list with links to detailed docs
+- Simplified installation section
+- Added repository structure diagram
+- Removed game-specific content (moved to rpg_game/README.md)
 
-- [x] 6. Rewrite `extended_npcs.py` - Add complete quest provider support
+### rpg_game/README.md
+- Changed title to "Game Documentation"
+- Added link back to root README.md
+- Updated table of contents (removed Contributing/License - kept in root)
+- Kept all game-specific content (features, installation, how to play, classes, locations, plugin system)
+- Renamed "Project Structure" to "Game Structure"
+- Kept Game Tips section
 
-- [x] 7. Rewrite `extended_world.py` - Add complete location provider support
-
-- [x] 8. Update `json_plugin_template.json` - Ensure compatibility
-
-- [x] 9. Update `README.md` - Fix documentation
-- [x] 10. Test all plugins load correctly
-
-
-
-## Key Changes Needed
-
-### base_plugin_template.py
-- Replace `PluginBase` with actual `Plugin` class
-- Remove non-existent imports (`PluginType`, `EventPriority`, `IPlugin`, etc.)
-- Use actual `EventType` from `core.engine`
-- Demonstrate working lifecycle methods
-- Show proper hook and command registration
-
-### All Plugins
-- Ensure proper `on_load`, `on_unload`, `on_enable`, `on_disable` signatures
-- Use correct `register_hooks` and `register_commands` return formats
-- Implement proper content provider methods
-- Add error handling
+### rpg_game/plugins/README.md
+- Added badges and creator info for consistency
+- Added links to parent README files
+- Updated footer to match other READMEs
+- Maintained all plugin development content
