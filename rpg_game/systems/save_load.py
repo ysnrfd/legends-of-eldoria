@@ -41,7 +41,7 @@ class SaveManager:
                 serialized[key] = value.to_dict()
             elif key == "world" and value:
                 serialized[key] = value.to_dict()
-            elif key == "quest_manager" and value:
+            elif key == "quests" and value:
                 serialized[key] = value.to_dict()
             elif key == "npc_manager" and value:
                 serialized[key] = value.to_dict()
