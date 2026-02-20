@@ -416,4 +416,127 @@ def get_available_mounts(player_level: int) -> List[Mount]:
     return [m for m in MOUNT_DATABASE.values() if m.level_required <= player_level]
 
 
+class MountManager:
+    """Manages player mounts"""
+    
+    def __init__(self):
+        self.player_mounts: Dict[str, List[Mount]] = {}  # player_id -> list of mounts
+        self.active_mounts: Dict[str, Optional[str]] = {}  # player_id -> active mount id
+    
+    def add_mount(self, player_id: str, mount: Mount) -> Tuple[bool, str]:
+        """Add a mount to player's collection"""
+        if player_id not in self.player_mounts:
+            self.player_mounts[player_id] = []
+        
+        self.player_mounts[player_id].append(mount)
+        return True, f"Added {mount.name} to your stables!"
+    
+    def remove_mount(self, player_id: str, mount_id: str) -> Tuple[bool, str]:
+        """Remove a mount from player's collection"""
+        if player_id not in self.player_mounts:
+            return False, "No mounts found."
+        
+        for i, mount in enumerate(self.player_mounts[player_id]):
+            if mount.id == mount_id:
+                removed = self.player_mounts[player_id].pop(i)
+                # If this was active mount, clear it
+                if self.active_mounts.get(player_id) == mount_id:
+                    self.active_mounts[player_id] = None
+                return True, f"Removed {removed.name}."
+        
+        return False, "Mount not found."
+    
+    def get_mounts(self, player_id: str) -> List[Mount]:
+        """Get all mounts for a player"""
+        return self.player_mounts.get(player_id, []).copy()
+    
+    def get_mount(self, player_id: str, mount_id: str) -> Optional[Mount]:
+        """Get a specific mount by ID"""
+        mounts = self.player_mounts.get(player_id, [])
+        for mount in mounts:
+            if mount.id == mount_id:
+                return mount
+        return None
+    
+    def get_active_mount(self, player_id: str) -> Optional[Mount]:
+        """Get the currently active/ridden mount"""
+        mount_id = self.active_mounts.get(player_id)
+        if not mount_id:
+            return None
+        
+        return self.get_mount(player_id, mount_id)
+    
+    def set_active_mount(self, player_id: str, mount_id: Optional[str]) -> Tuple[bool, str]:
+        """Set which mount is currently being ridden"""
+        if mount_id is None:
+            self.active_mounts[player_id] = None
+            return True, "Dismounted."
+        
+        mount = self.get_mount(player_id, mount_id)
+        if not mount:
+            return False, "Mount not found in your collection."
+        
+        self.active_mounts[player_id] = mount_id
+        return True, f"Mounted {mount.name}!"
+    
+    def feed_mount(self, player_id: str, mount_id: str, food_value: int = 20) -> str:
+        """Feed a mount"""
+        mount = self.get_mount(player_id, mount_id)
+        if not mount:
+            return "Mount not found."
+        
+        return mount.feed(food_value)
+    
+    def pet_mount(self, player_id: str, mount_id: str) -> str:
+        """Pet a mount"""
+        mount = self.get_mount(player_id, mount_id)
+        if not mount:
+            return "Mount not found."
+        
+        return mount.pet()
+    
+    def travel_with_mount(self, player_id: str, distance: int = 1) -> Tuple[bool, str]:
+        """Travel using active mount"""
+        mount = self.get_active_mount(player_id)
+        if not mount:
+            return False, "No active mount."
+        
+        return mount.travel(distance)
+    
+    def add_mount_experience(self, player_id: str, mount_id: str, amount: int) -> Tuple[bool, str]:
+        """Add experience to a mount"""
+        mount = self.get_mount(player_id, mount_id)
+        if not mount:
+            return False, "Mount not found."
+        
+        leveled_up = mount.add_experience(amount)
+        if leveled_up:
+            return True, f"{mount.name} leveled up to level {mount.level}!"
+        return True, f"{mount.name} gained {amount} experience."
+    
+    def to_dict(self) -> Dict:
+        """Serialize to dictionary"""
+        return {
+            "player_mounts": {
+                pid: [m.to_dict() for m in mounts] 
+                for pid, mounts in self.player_mounts.items()
+            },
+            "active_mounts": self.active_mounts
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'MountManager':
+        """Deserialize from dictionary"""
+        mm = cls()
+        
+        # Restore mounts
+        for pid, mount_list in data.get("player_mounts", {}).items():
+            mm.player_mounts[pid] = [Mount.from_dict(m) for m in mount_list]
+        
+        # Restore active mounts
+        mm.active_mounts = data.get("active_mounts", {})
+        
+        return mm
+
+
 print("Mount system loaded successfully!")
