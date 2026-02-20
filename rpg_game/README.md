@@ -8,9 +8,7 @@
 
 A fully-featured, open-world text-based RPG game with a powerful dynamic plugin architecture.
 
-> **No ownership claims allowed**
-> |
-> **Free for development and expansion**
+> **No ownership claims allowed** | **Free for development and expansion**
 
 📚 For project overview and contribution guidelines, see the [root README.md](../README.md)
 
@@ -391,39 +389,38 @@ For detailed plugin documentation, see [plugins/README.md](plugins/README.md).
 ## Project Structure
 
 ```
-rpg_game/
-├── main.py                      # Main game entry point
-├── README.md                    # This file
+legends-of-eldoria/
+├── README.md                    # This file - Project overview
 ├── LICENSE.md                   # License file
 ├── LICENSE.txt                  # Plain text license
 │
-├── core/
-│   ├── engine.py                # Core game engine and base classes
-│   ├── character.py             # Character system and player logic
-│   └── items.py                 # Item definitions and equipment
-│
-├── systems/
-│   ├── combat.py                # Turn-based combat system
-│   ├── world.py                 # World, locations, and travel
-│   ├── quests.py                # Quest management and objectives
-│   ├── npc.py                   # NPC and dialogue system
-│   ├── crafting.py              # Crafting professions and recipes
-│   ├── save_load.py             # Save/Load functionality
-│   └── plugins.py               # Dynamic plugin architecture
-│
-├── plugins/
-│   ├── README.md                # Plugin development guide
-│   ├── base_plugin_template.py  # Python plugin template
-│   ├── json_plugin_template.json # JSON plugin template
-│   ├── extended_world.py        # Extended world content plugin
-│   ├── enhanced_combat.py       # Sample combat plugin
-│   └── extended_items.py        # Sample items plugin
-│
-├── saves/                       # Save files directory
-│
-└── tests/                       # Test files
-    ├── test_extended_world.py
-    └── test_base_template.py
+└── rpg_game/                    # Game directory
+    ├── README.md                # Game documentation
+    ├── main.py                  # Main game entry point
+    ├── LICENSE.md               # License file
+    ├── LICENSE.txt              # Plain text license
+    │
+    ├── core/                    # Core game systems
+    │   ├── engine.py            # Game engine and base classes
+    │   ├── character.py         # Character system
+    │   └── items.py             # Item definitions
+    │
+    ├── systems/                 # Game systems
+    │   ├── combat.py            # Combat system
+    │   ├── world.py             # World and locations
+    │   ├── quests.py            # Quest management
+    │   ├── npc.py               # NPC system
+    │   ├── crafting.py          # Crafting system
+    │   ├── save_load.py         # Save/Load functionality
+    │   └── plugins.py           # Plugin architecture
+    │
+    ├── plugins/                 # Plugin directory
+    │   ├── README.md            # Plugin development guide
+    │   ├── base_plugin_template.py
+    │   ├── json_plugin_template.json
+    │   └── *.py                 # Sample plugins
+    │
+    └── saves/                   # Save files directory
 ```
 
 ---
