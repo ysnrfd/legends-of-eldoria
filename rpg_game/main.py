@@ -318,7 +318,7 @@ class Game:
 ║     A Complete Text-Based RPG                                                ║
 ║                                                                              ║
 ║     Development: YSNRFD                                                      ║
-║     Version: {self.VERSION}                                                          ║
+║     Version: {self.VERSION}                                                           ║
 ║                                                                              ║
 ║     Features:                                                                ║
 ║       • Open World Exploration                                               ║
