@@ -5,18 +5,15 @@ Character System - Player Character with Skills, Equipment, and Progression
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Any, Set, TYPE_CHECKING, Union
-from enum import Enum
 import sys
 import os
-import random
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.engine import (
-    Entity, Stats, StatType, CharacterClass, Rarity, DamageType,
-    StatusEffectType, Ability, AbilityType, TargetType, Damage,
-    EquipmentSlot, EventType, clamp, roll_dice, format_number
+    Entity, Stats, StatType, CharacterClass, DamageType,
+    StatusEffectType, Ability, AbilityType, TargetType, EquipmentSlot, format_number
 )
-from core.items import Weapon, Armor, Consumable, Item, get_item, ITEM_DATABASE
+from core.items import Weapon, Armor, Consumable, Item, get_item
 
 if TYPE_CHECKING:
     from systems.quests import Quest

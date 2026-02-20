@@ -4,15 +4,14 @@ Crafting System - Create Items, Equipment, and Consumables
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 from enum import Enum
 import sys
 import os
 import random
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.engine import Rarity, StatType
-from core.items import Item, Weapon, Armor, Consumable, Material, get_item, ItemFactory
+from core.items import Item, get_item
 
 if TYPE_CHECKING:
     from core.character import Character

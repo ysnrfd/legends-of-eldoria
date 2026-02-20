@@ -5,7 +5,7 @@ Provides comprehensive help for all plugin commands and system information.
 
 from __future__ import annotations
 from systems.plugins import Plugin, PluginInfo, PluginPriority, EventType
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
 
 class HelpPlugin(Plugin):

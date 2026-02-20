@@ -4,18 +4,17 @@ Combat System - Turn-based Combat with Skills and Abilities
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Any, TYPE_CHECKING
+from typing import List, Optional, Any, TYPE_CHECKING
 from enum import Enum
 import sys
 import os
 import random
-import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.engine import (
     Entity, Damage, DamageType, StatusEffectType, Ability,
     AbilityType, TargetType,
-    Rarity, StatType, CombatLog, EventType, roll_dice, clamp,
+    StatType, CombatLog, EventType, clamp,
     colored_text, print_border, pause
 )
 

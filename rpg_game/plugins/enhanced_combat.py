@@ -6,7 +6,7 @@ Demonstrates event priorities, combat mechanics, abilities, and content provisio
 from __future__ import annotations
 from systems.plugins import Plugin, PluginInfo, PluginPriority, EventType
 from core.engine import Rarity
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 
 class EnhancedCombatPlugin(Plugin):

@@ -31,15 +31,14 @@ import random
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from core.engine import (
-    clear_screen, colored_text, print_border, print_boxed,
-    get_input, pause, typewriter_effect, EventType, CharacterClass,
-    StatType, Rarity, StatusEffectType
+    clear_screen, colored_text, get_input, pause, EventType, CharacterClass,
+    StatusEffectType
 )
 from core.character import Character
 from core.items import get_item
 from systems.world import WorldMap
-from systems.combat import CombatEncounter, EnemyFactory
-from systems.quests import QuestManager, QuestType, ObjectiveType
+from systems.combat import CombatEncounter
+from systems.quests import QuestManager, ObjectiveType
 from systems.npc import NPCManager
 from systems.crafting import CraftingManager
 from systems.save_load import SaveManager

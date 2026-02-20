@@ -4,15 +4,14 @@ Item System - Weapons, Armor, Consumables, and Materials
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Any, Union, TYPE_CHECKING
-from enum import Enum
+from typing import Dict, List, Tuple, Optional, Any, TYPE_CHECKING
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.engine import (
     Item, ItemType, Rarity, DamageType, StatType, EquipmentSlot,
-    Entity, StatusEffectType, clamp
+    Entity, StatusEffectType
 )
 
 if TYPE_CHECKING:
