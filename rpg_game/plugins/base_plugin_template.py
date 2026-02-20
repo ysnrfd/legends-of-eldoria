@@ -42,7 +42,7 @@ class BasePluginTemplate(Plugin):
             id="base_plugin_template",
             name="Base Plugin Template",
             version="2.0.0",
-            author="Plugin Developer",
+            author="YSNRFD",
             description="Comprehensive template demonstrating all plugin features.",
             
             # Dependencies and conflicts

@@ -3,7 +3,7 @@
         "id": "json_plugin_template",
         "name": "JSON Plugin Template",
         "version": "2.0.0",
-        "author": "Plugin Developer",
+        "author": "YSNRFD",
         "description": "A template for JSON-based data-only plugins demonstrating the plugin system.",
         
         "dependencies": [],
