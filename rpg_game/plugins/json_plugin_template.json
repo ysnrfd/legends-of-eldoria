@@ -4,24 +4,15 @@
         "name": "JSON Plugin Template",
         "version": "2.0.0",
         "author": "Plugin Developer",
-        "description": "A template for JSON-based data-only plugins demonstrating the dynamic plugin system.",
+        "description": "A template for JSON-based data-only plugins demonstrating the plugin system.",
         
         "dependencies": [],
         "soft_dependencies": ["extended_items"],
         "conflicts": [],
-        "provides": ["json_template_content"],
         
         "priority": 100,
-        "plugin_type": "data",
-        
-        "min_game_version": "1.0.0",
-        "api_version": "2.0",
-        
-        "configurable": false,
-        "supports_hot_reload": true,
         
         "tags": ["template", "data", "example"],
-        "license": "MIT",
         "custom": {
             "category": "development",
             "content_counts": {
@@ -36,8 +27,6 @@
     },
     
     "items": {
-        "_comment": "Items added by this plugin",
-        
         "json_sword": {
             "name": "JSON Blade",
             "item_type": "weapon",
@@ -81,68 +70,52 @@
     },
     
     "enemies": {
-        "_comment": "Enemies added by this plugin",
-        
         "json_golem": {
             "name": "JSON Golem",
-            "description": "A construct made of pure data.",
-            "base_hp": 100,
-            "base_mp": 0,
-            "base_damage": 15,
-            "rarity": "Uncommon",
+            "description": "A construct animated by JSON magic.",
+            "base_hp": 150,
+            "base_mp": 50,
+            "base_damage": 20,
+            "rarity": "Rare",
             "faction": "construct",
-            "resistances": {
-                "physical": 0.3
-            },
+            "abilities": ["json_blast", "data_shield"],
+            "resistances": {"magic": 0.5},
+            "weaknesses": {"physical": 1.2},
             "drops": {
-                "gold": [20, 50],
+                "gold": [50, 150],
                 "items": ["json_ring"]
             }
         }
     },
     
     "locations": {
-        "_comment": "Locations added by this plugin",
-        
         "json_tower": {
             "name": "JSON Tower",
-            "description": "A mysterious tower that exists in the data layer.",
-            "location_type": "dungeon",
+            "description": "A mysterious tower that appeared from nowhere.",
+            "location_type": "special",
             "level_range": [5, 15],
             "connections": ["capital_city"],
             "enemies": ["json_golem"],
-            "danger_level": 3,
-            "special_features": {
-                "json_magic": true
-            },
-            "discovery_exp": 200
+            "resources": ["magic_crystal"],
+            "features": ["json_altar", "data_stream"],
+            "hidden": false
         }
     },
     
     "npcs": {
-        "_comment": "NPCs added by this plugin",
-        
         "json_merchant": {
             "name": "JSON Merchant",
-            "description": "A merchant who trades in JSON goods.",
+            "description": "A merchant who trades in JSON artifacts.",
             "npc_type": "merchant",
             "location": "json_tower",
             "shop_items": ["json_sword", "json_potion", "json_ring"],
-            "buy_multiplier": 1.0,
-            "sell_multiplier": 0.5,
-            "dialogue": {
-                "greeting": {
-                    "low_friendship": "\"Welcome! I deal in JSON wares.\"",
-                    "medium_friendship": "\"Good to see you again!\"",
-                    "high_friendship": "\"My best customer!\""
-                }
-            }
+            "services": ["trade", "identify"],
+            "buy_multiplier": 1.2,
+            "sell_multiplier": 0.7
         }
     },
     
     "quests": {
-        "_comment": "Quests added by this plugin",
-        
         "json_quest": {
             "name": "The JSON Mystery",
             "description": "Investigate the mysterious JSON Tower.",
@@ -173,8 +146,6 @@
     },
     
     "recipes": {
-        "_comment": "Crafting recipes added by this plugin",
-        
         "json_sword_recipe": {
             "name": "JSON Sword Recipe",
             "category": "weapons",

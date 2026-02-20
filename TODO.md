@@ -12,10 +12,13 @@
 
 - [x] 6. Rewrite `extended_npcs.py` - Add complete quest provider support
 
-- [ ] 7. Rewrite `extended_world.py` - Add complete location provider support
-- [ ] 8. Update `json_plugin_template.json` - Ensure compatibility
-- [ ] 9. Update `README.md` - Fix documentation
-- [ ] 10. Test all plugins load correctly
+- [x] 7. Rewrite `extended_world.py` - Add complete location provider support
+
+- [x] 8. Update `json_plugin_template.json` - Ensure compatibility
+
+- [x] 9. Update `README.md` - Fix documentation
+- [x] 10. Test all plugins load correctly
+
 
 
 ## Key Changes Needed
