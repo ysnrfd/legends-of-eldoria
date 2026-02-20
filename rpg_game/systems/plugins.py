@@ -254,7 +254,9 @@ class PluginManager:
     def _load_plugin_file(self, path: str) -> Optional[Plugin]:
         """Load a plugin from a file"""
         try:
-            spec = importlib.util.spec_from_file_location("plugin", path)
+            # Use unique module name based on filename to avoid import caching issues
+            module_name = os.path.basename(path)[:-3]  # Remove .py extension
+            spec = importlib.util.spec_from_file_location(module_name, path)
             if not spec or not spec.loader:
                 return None
             
