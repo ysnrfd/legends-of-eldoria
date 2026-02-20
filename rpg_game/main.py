@@ -43,6 +43,13 @@ from systems.npc import NPCManager
 from systems.crafting import CraftingManager
 from systems.save_load import SaveManager
 from systems.plugins import PluginManager
+from systems.factions import FactionManager
+from systems.guild import GuildManager
+from systems.auction_house import AuctionHouse
+from systems.housing import HousingManager
+from systems.dungeon_generator import RandomDungeon
+from systems.infinite_dungeon import InfiniteDungeon
+from core.mounts import MountManager
 
 
 class Game:
@@ -60,6 +67,12 @@ class Game:
         self.crafting_manager: CraftingManager = None
         self.save_manager: SaveManager = None
         self.plugin_manager: PluginManager = None
+        self.faction_manager: FactionManager = None
+        self.guild_manager: GuildManager = None
+        self.auction_house: AuctionHouse = None
+        self.housing_manager: HousingManager = None
+        self.infinite_dungeon: InfiniteDungeon = None
+        self.mount_manager: MountManager = None
         self.start_time: float = 0
         self.play_time: int = 0
         self.god_mode: bool = False
@@ -73,6 +86,14 @@ class Game:
         self.npc_manager = NPCManager()
         self.crafting_manager = CraftingManager()
         self.save_manager = SaveManager()
+        
+        # Initialize new feature systems
+        self.faction_manager = FactionManager()
+        self.guild_manager = GuildManager()
+        self.auction_house = AuctionHouse()
+        self.housing_manager = HousingManager()
+        self.infinite_dungeon = InfiniteDungeon()
+        self.mount_manager = MountManager()
         
         # Initialize plugin system (needs game reference)
         self.plugin_manager = PluginManager(self)
