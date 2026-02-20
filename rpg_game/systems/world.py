@@ -1,5 +1,8 @@
 """
 World System - Open World Exploration with Locations, NPCs, and Events
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations
@@ -175,7 +178,7 @@ class WorldMap:
                 location_type=LocationType.VILLAGE,
                 level_range=(1, 3),
                 connections=["forest_edge", "trade_road"],
-                npcs=["village_elder", "village_merchant", "village_guard"],
+                npcs=["village_elder", "village_merchant", "village_guard", "mysterious_stranger"],
                 danger_level=0
             ),
             "forest_edge": Location(
