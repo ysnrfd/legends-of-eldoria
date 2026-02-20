@@ -1,0 +1,768 @@
+{
+  "player": {
+    "id": "16a988a9",
+    "name": "Hero",
+    "description": "",
+    "level": 1,
+    "stats": {
+      "strength": 8,
+      "dexterity": 10,
+      "constitution": 10,
+      "intelligence": 16,
+      "wisdom": 14,
+      "charisma": 10,
+      "luck": 10
+    },
+    "max_hp": 60,
+    "current_hp": 60,
+    "max_mp": 38,
+    "current_mp": 38,
+    "max_stamina": 33,
+    "current_stamina": 33,
+    "experience": 0,
+    "experience_to_level": 100,
+    "is_alive": true,
+    "status_effects": {},
+    "resistances": {
+      "physical": 0.0,
+      "magical": 0.0,
+      "fire": 0.0,
+      "ice": 0.0,
+      "lightning": 0.0,
+      "poison": 0.0,
+      "holy": 0.0,
+      "dark": 0.0,
+      "true": 0.0
+    },
+    "position": "start_village",
+    "faction": "neutral",
+    "character_class": "Mage",
+    "inventory": {
+      "max_slots": 50,
+      "max_weight": 100.0,
+      "items": [
+        {
+          "name": "Minor Health Potion",
+          "item_type": "consumable",
+          "rarity": [
+            "Common",
+            1.0,
+            "\u001b[90m"
+          ],
+          "value": 15,
+          "weight": 0.5,
+          "quantity": 3,
+          "description": "Restores a small amount of health.",
+          "level_required": 1,
+          "hp_restore": 25,
+          "mp_restore": 0,
+          "stamina_restore": 0,
+          "temporary_effects": [],
+          "cooldown": 0,
+          "use_message": "You drink the potion and feel refreshed."
+        }
+      ],
+      "gold": 100
+    },
+    "equipment": {
+      "slots": {
+        "main_hand": {
+          "name": "Rusty Sword",
+          "item_type": "weapon",
+          "rarity": [
+            "Common",
+            1.0,
+            "\u001b[90m"
+          ],
+          "value": 10,
+          "weight": 2.0,
+          "description": "An old, rusty sword. Better than nothing.",
+          "level_required": 1,
+          "damage_min": 2,
+          "damage_max": 5,
+          "damage_type": "physical",
+          "attack_speed": 1.0,
+          "critical_chance": 0.05,
+          "critical_damage": 1.5,
+          "two_handed": false
+        },
+        "off_hand": null,
+        "head": null,
+        "chest": {
+          "name": "Cloth Shirt",
+          "item_type": "armor",
+          "rarity": [
+            "Common",
+            1.0,
+            "\u001b[90m"
+          ],
+          "value": 5,
+          "weight": 1.0,
+          "description": "Simple cloth clothing.",
+          "level_required": 1,
+          "slot": "chest",
+          "defense": 1,
+          "magic_defense": 0,
+          "resistances": {},
+          "stat_bonuses": {}
+        },
+        "legs": null,
+        "feet": null,
+        "hands": null,
+        "neck": null,
+        "ring_1": null,
+        "ring_2": null,
+        "accessory": null
+      }
+    },
+    "skills": {
+      "Swordsmanship": {
+        "name": "Swordsmanship",
+        "description": "Proficiency with swords and blades.",
+        "skill_type": "combat",
+        "max_level": 10,
+        "current_level": 0,
+        "experience": 0,
+        "effects": {
+          "damage_bonus": {
+            "base": 0,
+            "per_level": 2
+          }
+        }
+      },
+      "Magic": {
+        "name": "Magic",
+        "description": "Mastery of magical arts.",
+        "skill_type": "magic",
+        "max_level": 10,
+        "current_level": 0,
+        "experience": 0,
+        "effects": {
+          "magic_power": {
+            "base": 0,
+            "per_level": 3
+          }
+        }
+      },
+      "Stealth": {
+        "name": "Stealth",
+        "description": "The art of remaining unseen.",
+        "skill_type": "rogue",
+        "max_level": 10,
+        "current_level": 0,
+        "experience": 0,
+        "effects": {
+          "evasion": {
+            "base": 0,
+            "per_level": 1
+          }
+        }
+      },
+      "Crafting": {
+        "name": "Crafting",
+        "description": "Ability to create items and equipment.",
+        "skill_type": "crafting",
+        "max_level": 10,
+        "current_level": 0,
+        "experience": 0,
+        "effects": {
+          "quality": {
+            "base": 0,
+            "per_level": 5
+          }
+        }
+      },
+      "Survival": {
+        "name": "Survival",
+        "description": "Knowledge of the wild.",
+        "skill_type": "exploration",
+        "max_level": 10,
+        "current_level": 0,
+        "experience": 0,
+        "effects": {
+          "stamina_regen": {
+            "base": 0,
+            "per_level": 1
+          }
+        }
+      },
+      "Persuasion": {
+        "name": "Persuasion",
+        "description": "The art of convincing others.",
+        "skill_type": "social",
+        "max_level": 10,
+        "current_level": 0,
+        "experience": 0,
+        "effects": {
+          "prices": {
+            "base": 0,
+            "per_level": -2
+          }
+        }
+      }
+    },
+    "quests": {},
+    "completed_quests": [],
+    "reputation": {},
+    "achievements": [],
+    "play_time": 0,
+    "monsters_killed": 0,
+    "deaths": 0,
+    "damage_dealt": 0,
+    "damage_taken": 0,
+    "gold_earned": 0,
+    "gold_spent": 0,
+    "items_crafted": 0,
+    "quests_completed": 0,
+    "abilities": [
+      {
+        "name": "Fireball",
+        "description": "Launch a ball of fire at your enemy.",
+        "ability_type": "active",
+        "target_type": "single_enemy",
+        "mp_cost": 15,
+        "stamina_cost": 0,
+        "hp_cost": 0,
+        "cooldown": 1,
+        "current_cooldown": 0,
+        "damage": 30,
+        "damage_type": "fire",
+        "healing": 0,
+        "effects": [
+          [
+            "burn",
+            3,
+            1
+          ]
+        ],
+        "level_required": 1,
+        "class_required": null,
+        "range": 1,
+        "accuracy_modifier": 0,
+        "critical_modifier": 0.0,
+        "requirements": {}
+      },
+      {
+        "name": "Ice Bolt",
+        "description": "A frozen projectile that slows enemies.",
+        "ability_type": "active",
+        "target_type": "single_enemy",
+        "mp_cost": 12,
+        "stamina_cost": 0,
+        "hp_cost": 0,
+        "cooldown": 1,
+        "current_cooldown": 0,
+        "damage": 25,
+        "damage_type": "ice",
+        "healing": 0,
+        "effects": [
+          [
+            "slow",
+            2,
+            1
+          ]
+        ],
+        "level_required": 1,
+        "class_required": null,
+        "range": 1,
+        "accuracy_modifier": 0,
+        "critical_modifier": 0.0,
+        "requirements": {}
+      }
+    ]
+  },
+  "world": {
+    "locations": {
+      "start_village": {
+        "id": "start_village",
+        "name": "Willowbrook Village",
+        "description": "A peaceful village surrounded by willow trees. The air smells of fresh bread and woodsmoke.",
+        "location_type": "village",
+        "level_range": [
+          1,
+          3
+        ],
+        "connections": [
+          "forest_edge",
+          "trade_road"
+        ],
+        "npcs": [
+          "village_elder",
+          "village_merchant",
+          "village_guard",
+          "mysterious_stranger"
+        ],
+        "shops": [],
+        "enemies": [],
+        "items": [],
+        "events": [],
+        "discovered": true,
+        "visited_count": 0,
+        "danger_level": 0,
+        "special_features": {}
+      },
+      "forest_edge": {
+        "id": "forest_edge",
+        "name": "Whispering Woods",
+        "description": "Ancient trees whisper secrets to those who listen. The forest is dark and foreboding.",
+        "location_type": "forest",
+        "level_range": [
+          1,
+          5
+        ],
+        "connections": [
+          "start_village",
+          "deep_forest",
+          "ruins"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "goblin",
+          "wolf"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 2,
+        "special_features": {}
+      },
+      "deep_forest": {
+        "id": "deep_forest",
+        "name": "Deep Forest",
+        "description": "The trees grow thicker here, blocking out most sunlight. Strange sounds echo from the shadows.",
+        "location_type": "forest",
+        "level_range": [
+          3,
+          8
+        ],
+        "connections": [
+          "forest_edge",
+          "cave_entrance"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "goblin",
+          "wolf",
+          "orc_warrior"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 3,
+        "special_features": {}
+      },
+      "cave_entrance": {
+        "id": "cave_entrance",
+        "name": "Dark Cave",
+        "description": "A gaping maw in the earth leads into darkness. The air smells of damp stone and something... else.",
+        "location_type": "cave",
+        "level_range": [
+          5,
+          10
+        ],
+        "connections": [
+          "deep_forest",
+          "underground_ruins"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "skeleton",
+          "dark_mage"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 4,
+        "special_features": {}
+      },
+      "ruins": {
+        "id": "ruins",
+        "name": "Ancient Ruins",
+        "description": "Crumbling stone structures hint at a once-great civilization. Now only monsters dwell here.",
+        "location_type": "ruins",
+        "level_range": [
+          5,
+          12
+        ],
+        "connections": [
+          "forest_edge",
+          "temple"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "skeleton",
+          "dark_mage",
+          "troll"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 4,
+        "special_features": {}
+      },
+      "temple": {
+        "id": "temple",
+        "name": "Forgotten Temple",
+        "description": "An ancient temple to forgotten gods. Dark energy pulses from within.",
+        "location_type": "temple",
+        "level_range": [
+          10,
+          20
+        ],
+        "connections": [
+          "ruins"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "dark_mage",
+          "vampire"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 5,
+        "special_features": {}
+      },
+      "trade_road": {
+        "id": "trade_road",
+        "name": "Merchant's Road",
+        "description": "A well-traveled road connecting villages and towns. Bandits sometimes lurk here.",
+        "location_type": "wilderness",
+        "level_range": [
+          2,
+          6
+        ],
+        "connections": [
+          "start_village",
+          "capital_city"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "wolf"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 1,
+        "special_features": {}
+      },
+      "capital_city": {
+        "id": "capital_city",
+        "name": "Aldor Capital",
+        "description": "The grand capital city of the realm. Towers of white stone reach for the sky.",
+        "location_type": "city",
+        "level_range": [
+          5,
+          20
+        ],
+        "connections": [
+          "trade_road",
+          "mountain_pass"
+        ],
+        "npcs": [
+          "king",
+          "royal_merchant",
+          "guild_master"
+        ],
+        "shops": [
+          "royal_armory",
+          "magic_emporium",
+          "general_store"
+        ],
+        "enemies": [],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 0,
+        "special_features": {}
+      },
+      "mountain_pass": {
+        "id": "mountain_pass",
+        "name": "Dragon's Pass",
+        "description": "A treacherous mountain path. Legends say dragons nest in the peaks above.",
+        "location_type": "mountain",
+        "level_range": [
+          15,
+          30
+        ],
+        "connections": [
+          "capital_city",
+          "dragon_peak"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "troll",
+          "dragon_wyrmling"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 5,
+        "special_features": {}
+      },
+      "dragon_peak": {
+        "id": "dragon_peak",
+        "name": "Dragon's Peak",
+        "description": "The highest peak in the realm. An ancient dragon is said to dwell in a cave here.",
+        "location_type": "mountain",
+        "level_range": [
+          25,
+          50
+        ],
+        "connections": [
+          "mountain_pass"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "dragon_wyrmling",
+          "ancient_dragon"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 5,
+        "special_features": {}
+      },
+      "underground_ruins": {
+        "id": "underground_ruins",
+        "name": "Deep Ruins",
+        "description": "Ancient catacombs beneath the earth. Undead horrors stalk these halls.",
+        "location_type": "ruins",
+        "level_range": [
+          10,
+          25
+        ],
+        "connections": [
+          "cave_entrance"
+        ],
+        "npcs": [],
+        "shops": [],
+        "enemies": [
+          "skeleton",
+          "vampire",
+          "demon"
+        ],
+        "items": [],
+        "events": [],
+        "discovered": false,
+        "visited_count": 0,
+        "danger_level": 5,
+        "special_features": {}
+      }
+    },
+    "current_location": "start_village",
+    "time_of_day": "morning",
+    "weather": "clear",
+    "day": 1,
+    "hour": 8,
+    "discovered_locations": [
+      "start_village"
+    ]
+  },
+  "quests": {
+    "quests": {
+      "first_steps": {
+        "id": "first_steps",
+        "name": "First Steps",
+        "description": "The village elder wants you to prove yourself by defeating some goblins in the nearby forest.",
+        "quest_type": "side",
+        "level_required": 1,
+        "objectives": [
+          {
+            "objective_type": "kill",
+            "target": "goblin",
+            "required": 3,
+            "current": 0,
+            "description": "Defeat 3 goblins in the Whispering Woods"
+          }
+        ],
+        "rewards": {
+          "experience": 100,
+          "gold": 50,
+          "items": [
+            "health_potion_minor"
+          ],
+          "reputation": {
+            "village_elder": 10
+          },
+          "skill_experience": {},
+          "unlock_quests": [],
+          "unlock_locations": []
+        },
+        "giver": "village_elder",
+        "location": "start_village",
+        "status": "available",
+        "prerequisites": [],
+        "next_quests": [
+          "deeper_threats"
+        ],
+        "time_limit": 0,
+        "is_repeatable": false,
+        "completion_count": 0
+      },
+      "deeper_threats": {
+        "id": "deeper_threats",
+        "name": "Deeper Threats",
+        "description": "Goblins are just the beginning. Darker forces stir in the ruins to the east.",
+        "quest_type": "main",
+        "level_required": 3,
+        "objectives": [
+          {
+            "objective_type": "reach",
+            "target": "ruins",
+            "required": 1,
+            "current": 0,
+            "description": "Explore the Ancient Ruins"
+          },
+          {
+            "objective_type": "kill",
+            "target": "skeleton",
+            "required": 5,
+            "current": 0,
+            "description": "Defeat 5 skeletons"
+          }
+        ],
+        "rewards": {
+          "experience": 300,
+          "gold": 150,
+          "items": [
+            "steel_sword"
+          ],
+          "reputation": {
+            "village_elder": 20
+          },
+          "skill_experience": {},
+          "unlock_quests": [],
+          "unlock_locations": [
+            "temple"
+          ]
+        },
+        "giver": "village_elder",
+        "location": "start_village",
+        "status": "available",
+        "prerequisites": [
+          "first_steps"
+        ],
+        "next_quests": [],
+        "time_limit": 0,
+        "is_repeatable": false,
+        "completion_count": 0
+      },
+      "shadow_dealings": {
+        "id": "shadow_dealings",
+        "name": "Shadow Dealings",
+        "description": "The mysterious stranger has a dangerous proposal. Are you willing to get your hands dirty?",
+        "quest_type": "side",
+        "level_required": 5,
+        "objectives": [
+          {
+            "objective_type": "collect",
+            "target": "magic_essence",
+            "required": 5,
+            "current": 0,
+            "description": "Collect 5 Magic Essence from dark mages"
+          },
+          {
+            "objective_type": "talk",
+            "target": "mysterious_stranger",
+            "required": 1,
+            "current": 0,
+            "description": "Return to the Hooded Figure"
+          }
+        ],
+        "rewards": {
+          "experience": 500,
+          "gold": 300,
+          "items": [
+            "shadow_dagger"
+          ],
+          "reputation": {
+            "mysterious_stranger": 15
+          },
+          "skill_experience": {},
+          "unlock_quests": [],
+          "unlock_locations": []
+        },
+        "giver": "mysterious_stranger",
+        "location": "start_village",
+        "status": "available",
+        "prerequisites": [],
+        "next_quests": [],
+        "time_limit": 0,
+        "is_repeatable": false,
+        "completion_count": 0
+      },
+      "dragon_slayer": {
+        "id": "dragon_slayer",
+        "name": "Dragon Slayer",
+        "description": "An ancient dragon threatens the realm. Only a true hero can defeat it.",
+        "quest_type": "boss",
+        "level_required": 25,
+        "objectives": [
+          {
+            "objective_type": "reach",
+            "target": "dragon_peak",
+            "required": 1,
+            "current": 0,
+            "description": "Journey to Dragon's Peak"
+          },
+          {
+            "objective_type": "defeat_boss",
+            "target": "ancient_dragon",
+            "required": 1,
+            "current": 0,
+            "description": "Defeat the Ancient Dragon"
+          }
+        ],
+        "rewards": {
+          "experience": 5000,
+          "gold": 10000,
+          "items": [
+            "legendary_blade",
+            "dragon_scale_armor"
+          ],
+          "reputation": {
+            "king": 100,
+            "realm": 50
+          },
+          "skill_experience": {},
+          "unlock_quests": [],
+          "unlock_locations": []
+        },
+        "giver": "king",
+        "location": "capital_city",
+        "status": "available",
+        "prerequisites": [],
+        "next_quests": [],
+        "time_limit": 0,
+        "is_repeatable": false,
+        "completion_count": 0
+      }
+    },
+    "completed_quests": [],
+    "active_quests": []
+  },
+  "play_time": 17,
+  "metadata": {
+    "save_time": "2026-02-20T13:09:40.796906",
+    "game_version": "1.0.0",
+    "save_name": "autosave"
+  }
+}

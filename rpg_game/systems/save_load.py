@@ -78,6 +78,8 @@ class SaveManager:
                 deserialized[key] = WorldMap.from_dict(value)
             elif key == "quest_manager" and value:
                 deserialized[key] = QuestManager.from_dict(value)
+            elif key == "quests" and value:
+                deserialized[key] = QuestManager.from_dict(value)
             elif key == "npc_manager" and value:
                 deserialized[key] = NPCManager.from_dict(value)
             elif key == "crafting_manager" and value:
