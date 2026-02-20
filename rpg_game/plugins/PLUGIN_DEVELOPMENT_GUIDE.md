@@ -5,8 +5,6 @@
 
 **Creator:** YSNRFD | **GitHub:** [github.com/ysnrfd](https://github.com/ysnrfd)
 
----
-
 # Plugin Development Guide
 
 ## Legends of Eldoria - Dynamic Plugin System
