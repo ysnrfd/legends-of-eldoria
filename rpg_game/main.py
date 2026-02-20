@@ -249,10 +249,13 @@ class Game:
         
         if success:
             try:
-                # Reconstruct game state
-                self.player = Character.from_dict(data.get("player", {}))
-                self.world = WorldMap.from_dict(data.get("world", {}))
-                self.quest_manager = QuestManager.from_dict(data.get("quests", {}))
+                # Data is already deserialized by save_manager
+                self.player = data.get("player")
+                self.world = data.get("world")
+                # Handle both "quest_manager" and "quests" keys for compatibility
+                self.quest_manager = data.get("quest_manager") or data.get("quests")
+                if self.quest_manager is None:
+                    self.quest_manager = QuestManager()
                 self.play_time = data.get("play_time", 0)
                 
                 print(f"\nGame loaded: {self.player.name}, Level {self.player.level}")
