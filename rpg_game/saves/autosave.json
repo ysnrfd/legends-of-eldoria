@@ -1,24 +1,24 @@
 {
   "player": {
-    "id": "2486e437",
+    "id": "3c3542eb",
     "name": "Hero",
     "description": "",
     "level": 1,
     "stats": {
-      "strength": 8,
+      "strength": 14,
       "dexterity": 10,
-      "constitution": 10,
-      "intelligence": 16,
-      "wisdom": 14,
-      "charisma": 10,
-      "luck": 10
+      "constitution": 14,
+      "intelligence": 10,
+      "wisdom": 12,
+      "charisma": 12,
+      "luck": 8
     },
-    "max_hp": 60,
-    "current_hp": 60,
-    "max_mp": 38,
-    "current_mp": 38,
-    "max_stamina": 33,
-    "current_stamina": 33,
+    "max_hp": 70,
+    "current_hp": 70,
+    "max_mp": 27,
+    "current_mp": 27,
+    "max_stamina": 43,
+    "current_stamina": 43,
     "experience": 0,
     "experience_to_level": 100,
     "is_alive": true,
@@ -36,7 +36,7 @@
     },
     "position": "start_village",
     "faction": "neutral",
-    "character_class": "Mage",
+    "character_class": "Paladin",
     "inventory": {
       "max_slots": 50,
       "max_weight": 100.0,
@@ -216,52 +216,19 @@
     "quests_completed": 0,
     "abilities": [
       {
-        "name": "Fireball",
-        "description": "Launch a ball of fire at your enemy.",
+        "name": "Holy Smite",
+        "description": "Strike with divine power.",
         "ability_type": "active",
         "target_type": "single_enemy",
         "mp_cost": 15,
         "stamina_cost": 0,
         "hp_cost": 0,
-        "cooldown": 1,
+        "cooldown": 2,
         "current_cooldown": 0,
         "damage": 30,
-        "damage_type": "fire",
+        "damage_type": "holy",
         "healing": 0,
-        "effects": [
-          [
-            "burn",
-            3,
-            1
-          ]
-        ],
-        "level_required": 1,
-        "class_required": null,
-        "range": 1,
-        "accuracy_modifier": 0,
-        "critical_modifier": 0.0,
-        "requirements": {}
-      },
-      {
-        "name": "Ice Bolt",
-        "description": "A frozen projectile that slows enemies.",
-        "ability_type": "active",
-        "target_type": "single_enemy",
-        "mp_cost": 12,
-        "stamina_cost": 0,
-        "hp_cost": 0,
-        "cooldown": 1,
-        "current_cooldown": 0,
-        "damage": 25,
-        "damage_type": "ice",
-        "healing": 0,
-        "effects": [
-          [
-            "slow",
-            2,
-            1
-          ]
-        ],
+        "effects": [],
         "level_required": 1,
         "class_required": null,
         "range": 1,
@@ -759,9 +726,9 @@
     "completed_quests": [],
     "active_quests": []
   },
-  "play_time": 9,
+  "play_time": 27,
   "metadata": {
-    "save_time": "2026-02-20T12:26:46.366084",
+    "save_time": "2026-02-20T12:48:23.161117",
     "game_version": "1.0.0",
     "save_name": "autosave"
   }
