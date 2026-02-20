@@ -425,7 +425,7 @@ class Item(GameObject):
             "name": self.name,
             "description": self.description,
             "item_type": self.item_type.value,
-            "rarity": self.rarity.value,
+            "rarity": self.rarity.name,
             "value": self.value,
             "weight": self.weight,
             "quantity": self.quantity,

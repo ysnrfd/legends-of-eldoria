@@ -1,24 +1,24 @@
 {
   "player": {
-    "id": "c20dae7b",
+    "id": "2486e437",
     "name": "Hero",
     "description": "",
     "level": 1,
     "stats": {
-      "strength": 10,
-      "dexterity": 16,
+      "strength": 8,
+      "dexterity": 10,
       "constitution": 10,
-      "intelligence": 10,
-      "wisdom": 10,
-      "charisma": 12,
-      "luck": 12
+      "intelligence": 16,
+      "wisdom": 14,
+      "charisma": 10,
+      "luck": 10
     },
     "max_hp": 60,
     "current_hp": 60,
-    "max_mp": 25,
-    "current_mp": 25,
-    "max_stamina": 35,
-    "current_stamina": 35,
+    "max_mp": 38,
+    "current_mp": 38,
+    "max_stamina": 33,
+    "current_stamina": 33,
     "experience": 0,
     "experience_to_level": 100,
     "is_alive": true,
@@ -36,7 +36,7 @@
     },
     "position": "start_village",
     "faction": "neutral",
-    "character_class": "Rogue",
+    "character_class": "Mage",
     "inventory": {
       "max_slots": 50,
       "max_weight": 100.0,
@@ -216,24 +216,57 @@
     "quests_completed": 0,
     "abilities": [
       {
-        "name": "Backstab",
-        "description": "A deadly attack from the shadows.",
+        "name": "Fireball",
+        "description": "Launch a ball of fire at your enemy.",
         "ability_type": "active",
         "target_type": "single_enemy",
-        "mp_cost": 0,
-        "stamina_cost": 20,
+        "mp_cost": 15,
+        "stamina_cost": 0,
         "hp_cost": 0,
-        "cooldown": 2,
+        "cooldown": 1,
         "current_cooldown": 0,
-        "damage": 35,
-        "damage_type": "physical",
+        "damage": 30,
+        "damage_type": "fire",
         "healing": 0,
-        "effects": [],
+        "effects": [
+          [
+            "burn",
+            3,
+            1
+          ]
+        ],
         "level_required": 1,
         "class_required": null,
         "range": 1,
         "accuracy_modifier": 0,
-        "critical_modifier": 0.25,
+        "critical_modifier": 0.0,
+        "requirements": {}
+      },
+      {
+        "name": "Ice Bolt",
+        "description": "A frozen projectile that slows enemies.",
+        "ability_type": "active",
+        "target_type": "single_enemy",
+        "mp_cost": 12,
+        "stamina_cost": 0,
+        "hp_cost": 0,
+        "cooldown": 1,
+        "current_cooldown": 0,
+        "damage": 25,
+        "damage_type": "ice",
+        "healing": 0,
+        "effects": [
+          [
+            "slow",
+            2,
+            1
+          ]
+        ],
+        "level_required": 1,
+        "class_required": null,
+        "range": 1,
+        "accuracy_modifier": 0,
+        "critical_modifier": 0.0,
         "requirements": {}
       }
     ]
@@ -726,9 +759,9 @@
     "completed_quests": [],
     "active_quests": []
   },
-  "play_time": 16,
+  "play_time": 9,
   "metadata": {
-    "save_time": "2026-02-20T12:22:15.022724",
+    "save_time": "2026-02-20T12:26:46.366084",
     "game_version": "1.0.0",
     "save_name": "autosave"
   }

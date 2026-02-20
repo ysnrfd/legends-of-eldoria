@@ -239,6 +239,35 @@ class ItemFactory:
     """Factory for creating items from data"""
     
     @staticmethod
+    def _parse_rarity(rarity_data) -> Rarity:
+        """Parse rarity from various formats (string, list, or enum)"""
+        if rarity_data is None:
+            return Rarity.COMMON
+        
+        # If it's already a Rarity enum
+        if isinstance(rarity_data, Rarity):
+            return rarity_data
+        
+        # If it's a list (old format from save files), extract the first element
+        if isinstance(rarity_data, (list, tuple)):
+            rarity_str = rarity_data[0] if len(rarity_data) > 0 else "Common"
+        else:
+            rarity_str = rarity_data
+        
+        # Convert to string and normalize
+        rarity_str = str(rarity_str).upper()
+        
+        # Try to match with enum
+        try:
+            return Rarity[rarity_str]
+        except KeyError:
+            # Try to match by display name
+            for rarity in Rarity:
+                if rarity.display_name.upper() == rarity_str:
+                    return rarity
+            return Rarity.COMMON
+    
+    @staticmethod
     def create_item(data: Dict[str, Any]) -> Optional[Item]:
         """Create an item from dictionary data"""
         item_type = data.get("item_type", "material")
@@ -259,7 +288,7 @@ class ItemFactory:
                 name=data.get("name", "Unknown Item"),
                 description=data.get("description", ""),
                 item_type=ItemType(item_type) if item_type in [t.value for t in ItemType] else ItemType.MATERIAL,
-                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                rarity=ItemFactory._parse_rarity(data.get("rarity")),
                 value=data.get("value", 0),
                 weight=data.get("weight", 0.0),
                 quantity=data.get("quantity", 1),
@@ -272,7 +301,7 @@ class ItemFactory:
             return Weapon(
                 name=data.get("name", "Unknown Weapon"),
                 description=data.get("description", ""),
-                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                rarity=ItemFactory._parse_rarity(data.get("rarity")),
                 value=data.get("value", 0),
                 weight=data.get("weight", 1.0),
                 quantity=data.get("quantity", 1),
@@ -299,7 +328,7 @@ class ItemFactory:
             return Armor(
                 name=data.get("name", "Unknown Armor"),
                 description=data.get("description", ""),
-                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                rarity=ItemFactory._parse_rarity(data.get("rarity")),
                 value=data.get("value", 0),
                 weight=data.get("weight", 2.0),
                 quantity=data.get("quantity", 1),
@@ -328,7 +357,7 @@ class ItemFactory:
             return Consumable(
                 name=data.get("name", "Unknown Consumable"),
                 description=data.get("description", ""),
-                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                rarity=ItemFactory._parse_rarity(data.get("rarity")),
                 value=data.get("value", 0),
                 weight=data.get("weight", 0.1),
                 quantity=data.get("quantity", 1),
@@ -350,7 +379,7 @@ class ItemFactory:
             return Material(
                 name=data.get("name", "Unknown Material"),
                 description=data.get("description", ""),
-                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                rarity=ItemFactory._parse_rarity(data.get("rarity")),
                 value=data.get("value", 0),
                 weight=data.get("weight", 0.1),
                 quantity=data.get("quantity", 1),
@@ -371,7 +400,7 @@ class ItemFactory:
                 name=data.get("name", "Unknown Accessory"),
                 description=data.get("description", ""),
                 item_type=ItemType.ACCESSORY,
-                rarity=Rarity(data.get("rarity", "Common")) if data.get("rarity") in [r.value for r in Rarity] else Rarity.COMMON,
+                rarity=ItemFactory._parse_rarity(data.get("rarity")),
                 value=data.get("value", 0),
                 weight=data.get("weight", 0.1),
                 quantity=data.get("quantity", 1),
