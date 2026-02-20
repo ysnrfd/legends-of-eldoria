@@ -136,8 +136,10 @@ class HelpPlugin(Plugin):
 
         # Get all registered commands from the plugin manager
         commands = {}
+        command_info = {}
         if hasattr(game, 'plugin_manager') and game.plugin_manager:
             commands = game.plugin_manager._commands
+            command_info = game.plugin_manager._command_info
         
         if not commands:
             return "No plugin commands available."
@@ -146,20 +148,26 @@ class HelpPlugin(Plugin):
         if args:
             cmd_name = args[0].lower()
             
-            # Check aliases
-            for name, info in commands.items():
+            # Check aliases in command_info
+            for name, info in command_info.items():
                 aliases = info.get("aliases", []) if isinstance(info, dict) else []
                 if cmd_name in aliases:
                     cmd_name = name
                     break
             
-            if cmd_name in commands:
-                return self._format_command_help(cmd_name, commands[cmd_name])
+            # Get command info from _command_info (metadata), fallback to _commands (handler)
+            cmd_data = command_info.get(cmd_name)
+            if cmd_data is None and cmd_name in commands:
+                # Fallback for commands without metadata
+                cmd_data = {"help": "No detailed information available"}
+            
+            if cmd_data:
+                return self._format_command_help(cmd_name, cmd_data)
             else:
                 return f"Unknown command: {cmd_name}\nUse /help to see all commands."
         
-        # Build categorized help
-        return self._format_all_commands(commands)
+        # Build categorized help using command_info for categories
+        return self._format_all_commands(commands, command_info)
     
     def _format_command_help(self, cmd_name: str, cmd_info: Any) -> str:
         """Format detailed help for a single command"""

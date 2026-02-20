@@ -196,6 +196,7 @@ class PluginManager:
         self._plugin_order: List[str] = []
         self._event_handlers: Dict[EventType, List[Callable]] = defaultdict(list)
         self._commands: Dict[str, Callable] = {}
+        self._command_info: Dict[str, Dict[str, Any]] = {}  # Store command metadata
         self._content_registries: Dict[str, Dict[str, Any]] = defaultdict(dict)
         self._lock = threading.RLock()
     
@@ -315,8 +316,12 @@ class PluginManager:
                             for name, cmd_data in commands.items():
                                 if isinstance(cmd_data, dict) and 'handler' in cmd_data:
                                     self._commands[name] = cmd_data['handler']
+                                    # Store command metadata for help system
+                                    self._command_info[name] = cmd_data
                                 elif callable(cmd_data):
                                     self._commands[name] = cmd_data
+                                    # Store minimal metadata for callable commands
+                                    self._command_info[name] = {"help": "No detailed information available"}
                     except Exception as e:
                         logger.warning(f"Error registering commands from {plugin.id}: {e}")
                 
