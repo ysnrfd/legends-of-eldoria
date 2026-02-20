@@ -93,6 +93,7 @@ class PluginInfo:
     author: str = "Unknown"
     description: str = ""
     dependencies: List[str] = field(default_factory=list)
+    soft_dependencies: List[str] = field(default_factory=list)
     conflicts: List[str] = field(default_factory=list)
     priority: PluginPriority = PluginPriority.NORMAL
     tags: List[str] = field(default_factory=list)
@@ -107,6 +108,7 @@ class PluginInfo:
             "author": self.author,
             "description": self.description,
             "dependencies": self.dependencies,
+            "soft_dependencies": self.soft_dependencies,
             "conflicts": self.conflicts,
             "priority": self.priority.value,
             "tags": self.tags,
@@ -123,6 +125,7 @@ class PluginInfo:
             author=data.get("author", "Unknown"),
             description=data.get("description", ""),
             dependencies=data.get("dependencies", []),
+            soft_dependencies=data.get("soft_dependencies", []),
             conflicts=data.get("conflicts", []),
             priority=PluginPriority(data.get("priority", 100)),
             tags=data.get("tags", []),
