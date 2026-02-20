@@ -1,5 +1,8 @@
 """
 Character System - Player Character with Skills, Equipment, and Progression
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

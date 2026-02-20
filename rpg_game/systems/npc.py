@@ -1,5 +1,8 @@
 """
 NPC and Dialogue System - Interactive Characters and Conversations
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

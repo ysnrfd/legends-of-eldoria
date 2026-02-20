@@ -1,5 +1,8 @@
 """
 Combat System - Turn-based Combat with Skills and Abilities
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

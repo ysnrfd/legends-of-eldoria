@@ -19,6 +19,9 @@ A fully dynamic, extensible plugin system supporting:
 - Version management and compatibility
 
 ================================================================================
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

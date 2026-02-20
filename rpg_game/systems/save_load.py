@@ -1,5 +1,8 @@
 """
 Save/Load System - Persistent Game State Management
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

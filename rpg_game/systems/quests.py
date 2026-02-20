@@ -1,5 +1,8 @@
 """
 Quest System - Dynamic Quests, Objectives, and Rewards
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

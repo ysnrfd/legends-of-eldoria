@@ -1,5 +1,8 @@
 """
 Crafting System - Create Items, Equipment, and Consumables
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations

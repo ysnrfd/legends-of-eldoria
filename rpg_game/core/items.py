@@ -1,5 +1,8 @@
 """
 Item System - Weapons, Armor, Consumables, and Materials
+
+Author: YSNRFD
+Version: 1.0.0
 """
 
 from __future__ import annotations
