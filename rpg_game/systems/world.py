@@ -445,7 +445,7 @@ class WorldMap:
         
         # Small chance to find gold
         if random.random() < 0.2:
-            gold = random.randint(1, 10) * location.danger_level
+            gold = random.randint(1, 10) * max(1, location.danger_level)
             player.add_gold(gold)
             messages.append(f"You found {gold} gold!")
         
